@@ -1,7 +1,7 @@
 import { pipeline, env } from '@xenova/transformers';
 
-
-
+// Set TensorFlow logging level
+env.TF_CPP_MIN_LOG_LEVEL = 1;
 env.allowLocalModels = false;
 env.useBrowserCache = false;
 

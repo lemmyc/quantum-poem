@@ -10,13 +10,9 @@ export default function Home() {
   const canvasRef = useRef(null);
   const [inputText, setInputText] = useState('');
   const [result, setResult] = useState(null);
-  const [capturedImage, setCapturedImage] = useState(null);
-  const [showVideo, setShowVideo] = useState(true); // Make video visible by default
   const [videoStream, setVideoStream] = useState(null);
   
   const {
-    emotion,
-    score,
     loading,
     modelReady,
     error,
@@ -25,13 +21,11 @@ export default function Home() {
     setError
   } = useEmotionWorker();
 
-  // Ensure video stream continues even when UI is hidden
+  // Ensure video stream runs in background
   useEffect(() => {
-    // This effect ensures video stream continues when visibility changes
     const setupVideo = async () => {
       try {
         if (!videoStream && videoRef.current) {
-          // Only initialize stream if not already set
           const stream = await navigator.mediaDevices.getUserMedia({ 
             video: { 
               width: { ideal: 640 },
@@ -45,7 +39,6 @@ export default function Home() {
             videoRef.current.srcObject = stream;
           }
         } else if (videoStream && videoRef.current) {
-          // Reconnect existing stream if video ref changes
           videoRef.current.srcObject = videoStream;
         }
       } catch (err) {
@@ -56,7 +49,6 @@ export default function Home() {
 
     setupVideo();
 
-    // Cleanup on unmount
     return () => {
       if (videoStream) {
         videoStream.getTracks().forEach(track => track.stop());
@@ -85,37 +77,6 @@ export default function Home() {
         }
       }
       
-      // Capture the image and store it
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      
-      if (!video || !canvas) {
-        setError('Video or canvas is not available');
-        return;
-      }
-      
-      // Make sure video is ready
-      if (video.readyState < 2) {
-        await new Promise(resolve => {
-          video.onloadeddata = resolve;
-          // If already loaded, resolve immediately
-          if (video.readyState >= 2) resolve();
-        });
-      }
-      
-      // Draw the current video frame to canvas
-      const ctx = canvas.getContext('2d');
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
-      
-      // Force a fresh frame from the video
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      console.log('Captured frame from video:', canvas.width, 'x', canvas.height);
-      
-      // Save the captured image
-      const imageUrl = canvas.toDataURL('image/png');
-      setCapturedImage(imageUrl);
-      
       // Capture emotion and wait for result
       const emotionResult = await captureAndClassify(videoRef, canvasRef);
       
@@ -129,11 +90,6 @@ export default function Home() {
       console.error('Submit error:', err);
       setError(typeof err === 'string' ? err : 'Failed to process emotion. Please try again.');
     }
-  };
-
-  // Toggle video visibility without stopping the stream
-  const toggleVideoVisibility = () => {
-    setShowVideo(prev => !prev);
   };
 
   return (
@@ -152,34 +108,14 @@ export default function Home() {
           </div>
         )}
         
-        {/* Video capture - toggle visibility but keep stream active */}
-        <div className={showVideo ? "" : "hidden"}>
-          <p className="text-sm text-gray-700 mb-2">Đảm bảo khuôn mặt của bạn hiện rõ trong khung hình:</p>
+        {/* Hidden video elements for background processing */}
+        <div className="hidden">
           <VideoCapture
             videoRef={videoRef}
             canvasRef={canvasRef}
             onError={setError}
           />
-          <div className="flex justify-end mb-4">
-            <button 
-              onClick={toggleVideoVisibility} 
-              className="text-sm text-blue-600 underline"
-            >
-              {showVideo ? "Ẩn camera" : "Hiện camera"}
-            </button>
-          </div>
         </div>
-
-        {!showVideo && (
-          <div className="mb-4 text-right">
-            <button 
-              onClick={toggleVideoVisibility} 
-              className="text-sm text-blue-600 underline"
-            >
-              Hiện camera
-            </button>
-          </div>
-        )}
 
         {/* Loading status */}
         <ProgressBar progressItems={progressItems} />
@@ -213,19 +149,6 @@ export default function Home() {
         {result && (
           <div className="mt-6 p-4 bg-gray-50 rounded-lg">
             <h3 className="text-lg font-semibold mb-2 text-gray-800">Result:</h3>
-            
-            {/* Display captured image */}
-            {capturedImage && (
-              <div className="mb-4">
-                <p className="text-sm text-gray-700 mb-2">Captured Image:</p>
-                <img 
-                  src={capturedImage} 
-                  alt="Captured" 
-                  className="w-full rounded-lg border border-gray-200 mb-3" 
-                />
-              </div>
-            )}
-            
             <div className="bg-gray-100 p-3 rounded overflow-x-auto">
               <pre className="text-gray-800 font-mono text-sm">
                 {JSON.stringify(result, null, 2)}
