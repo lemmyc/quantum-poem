@@ -1,31 +1,25 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useEffect } from 'react';
 
 export default function VideoCapture({ videoRef, canvasRef, onError }) {
-  useEffect(() => {
-    async function startWebcam() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (err) {
-        onError('Failed to access webcam. Please ensure camera permissions are granted.');
-      }
-    }
-    startWebcam();
-  }, [videoRef, onError]);
-
+  // Stream is now managed by the parent component
+  // We only need to handle the UI here
+  
   return (
-    <div className="relative overflow-hidden rounded-xl mb-6">
+    <div className="relative overflow-hidden rounded-lg border border-gray-300 mb-4">
       <video
         ref={videoRef}
         autoPlay
         playsInline
-        className="w-full h-auto rounded-xl transform transition-transform duration-300 hover:scale-[1.02]"
+        muted
+        className="w-full h-auto rounded-lg"
+        style={{ maxHeight: '300px', objectFit: 'cover' }}
       />
-      <canvas ref={canvasRef} className="hidden" />
+      <canvas ref={canvasRef} className="hidden" width="640" height="480" />
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="border-4 border-dashed border-blue-400 rounded-full w-32 h-32 opacity-50"></div>
+      </div>
     </div>
   );
 } 
