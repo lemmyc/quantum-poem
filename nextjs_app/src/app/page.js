@@ -587,7 +587,7 @@ export default function Home() {
             <h3 className="text-lg font-semibold mb-1 text-gray-800">
               Current Keyword Set
             </h3>
-            <p className="text-xs text-gray-500 mb-3">Based on "{inputText.substring(0,30)}{inputText.length > 30 ? '...' : ''}"</p>
+            <p className="text-xs text-gray-500 mb-3">Based on &quot;{inputText.substring(0,30)}{inputText.length > 30 ? '...' : ''}&quot;</p>
             
             {isFindingRelevantWord && !activeWordCandidate && (
                 <p className="text-sm text-indigo-600 animate-pulse my-2">Finding the best suggestion for you...</p>
@@ -620,7 +620,7 @@ export default function Home() {
           <div className="mt-6 p-6 bg-indigo-50 rounded-xl shadow-lg border border-indigo-200">
             <h3 className="text-xl font-semibold mb-3 text-indigo-700 text-center">Poem Word Suggestion:</h3>
             <p className="text-center text-2xl font-bold text-indigo-600 my-4">
-              "{activeWordCandidate.word}"
+              &quot;{activeWordCandidate.word}&quot;
               <span className="text-sm font-normal block text-gray-500">Relevance: {(activeWordCandidate.probability * 100).toFixed(0)}%</span>
             </p>
             <p className="text-sm text-center text-gray-600 mb-4">
