@@ -8,14 +8,14 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: 'Missing or invalid keywords array in request body' });
         }
   
-        // Mockup the probability generation
-        // Tạo một mảng các object, mỗi object có từ và một xác suất ngẫu nhiên
+        // Mock probability generation
+        // Create an array of objects, each containing a word and a random probability
         const wordsWithProbabilities = keywords.map(word => ({
           word: word,
-          probability: Math.random() // Tạo xác suất ngẫu nhiên từ 0 đến 1
+          probability: Math.random() // Generate random probability between 0 and 1
         }));
   
-        // Giả lập độ trễ mạng
+        // Simulate network delay
         await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
   
         res.status(200).json({ results: wordsWithProbabilities });
