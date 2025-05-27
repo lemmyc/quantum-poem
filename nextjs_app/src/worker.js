@@ -23,7 +23,7 @@ class MyEmotionDetectionPipeline {
 
 // Listen for messages from the main thread
 self.addEventListener('message', async (event) => {
-    console.log(event);
+    // console.log(event);
     // Load the pipeline
     const classifier = await MyEmotionDetectionPipeline.getInstance((x) => {
         self.postMessage(x);

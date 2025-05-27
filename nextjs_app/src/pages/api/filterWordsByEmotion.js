@@ -97,7 +97,7 @@ Do NOT add any explanatory text outside the JSON object.`;
       }
       
       console.log("Filtered words by emotion:", validatedFilteredWords);
-      res.status(200).json({ filteredWords: validatedFilteredWords });
+      res.status(200).json({ filteredWords: parsedResponse.filteredWords });
 
     } catch (error) {
       console.error('Error filtering words with OpenAI:', error);
