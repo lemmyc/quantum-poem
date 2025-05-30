@@ -1,0 +1,128 @@
+.language-selector {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+  }
+  
+  .background-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: -1;
+  }
+  
+  .selector-content {
+    text-align: center;
+    color: white;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 1rem;
+    backdrop-filter: blur(10px);
+    transition: transform 0.8s ease;
+  }
+  
+  .fly-up {
+    transform: translateY(-100vh);
+  }
+  
+  .h1-appear {
+    animation: fadeIn 0.5s ease-in;
+  }
+  
+  .language-options {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+    justify-content: center;
+  }
+  
+  .language-options button {
+    padding: 1rem 2rem;
+    border: 2px solid white;
+    background: transparent;
+    color: white;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .language-options button:hover {
+    background: white;
+    color: black;
+  }
+  
+  .center-input {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  
+  .input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+  
+  .input-wrapper input {
+    padding: 1rem 3rem 1rem 1rem;
+    border: 2px solid white;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border-radius: 0.5rem;
+    width: 300px;
+    font-size: 1rem;
+  }
+  
+  .input-wrapper input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+  }
+  
+  .input-icon {
+    position: absolute;
+    right: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+  
+  .poem-popup {
+    position: fixed;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    max-width: 400px;
+    backdrop-filter: blur(5px);
+  }
+  
+  .poem-popup-top {
+    top: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .poem-content {
+    white-space: pre-wrap;
+    font-family: monospace;
+  }
+  
+  .typing {
+    border-right: 2px solid white;
+    animation: blink 0.7s infinite;
+  }
+  
+  @keyframes blink {
+    50% { border-color: transparent; }
+  }
+  
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  } 
