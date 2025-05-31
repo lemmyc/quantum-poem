@@ -3,12 +3,26 @@ import OpenAI from "openai";
 
 const openai = new OpenAI();
 const MODEL_NAME = process.env.OPENAI_MODEL_NAME || "gpt-3.5-turbo";
-const CUSTOM_SEPARATOR = "<SEP/>"; 
+const CUSTOM_SEPARATOR = "<SEP/>";
+
+const detectLanguage = async (text) => {
+    const normalizedText = text.trim().toLowerCase();
+    if (/[àáạảãâầấậẩẫăằắặẳẵđèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹ]/i.test(normalizedText)) {
+        return 'vietnamese';
+    }
+    if (/[一-龯ぁ-んァ-ン]/.test(normalizedText)) {
+        return 'japanese';
+    }
+    if (/[가-힣]/.test(normalizedText)) {
+        return 'korean';
+    }
+
+    return 'english';
+};
 
 // This function creates a prompt based on input parameters
-const getPoemPromptDetails = (language, mainWord, emotion) => {
+const getPoemPromptDetails = (language, mainWord, subWord, emotion) => {
     let styleInstruction = "";
-    // Keep the original styleInstruction from your prompt
     switch (language.toLowerCase()) {
         case 'vietnamese':
             styleInstruction = process.env.OPENAI_LUCBAT_COMPOSER_STYLE_INSTRUCTION;
@@ -22,9 +36,8 @@ const getPoemPromptDetails = (language, mainWord, emotion) => {
             break;
     }
 
-    // Keep the original prompt structure and ADD separator + JSON requirements
     const inputPrompt = `${styleInstruction}
-    Using the word "${mainWord}" as the main theme of the poem.
+    Using the words "${mainWord}" and "${subWord}" as the main theme of the poem.
     Generate a poem with the following emotion: ${emotion}.
     Follow these steps:
     1. Generate poem.
@@ -41,31 +54,38 @@ const getPoemPromptDetails = (language, mainWord, emotion) => {
     return inputPrompt;
 };
 
-
 export default async function handler(req, res) {
     if (req.method === 'POST') {
         try {
-            const { mainWord, emotion, language } = req.body;
+            const { mainWord, subWord, emotion } = req.body;
 
-            if (!mainWord || !emotion || !language) {
-                return res.status(400).json({ error: 'Missing required fields for poem generation: mainWord, emotion, language.' });
+            // Validate required fields (language removed)
+            if (!mainWord || !subWord || !emotion) {
+                return res.status(400).json({ error: 'Missing required fields for poem generation: mainWord, subWord, emotion.' });
             }
 
-            const inputPrompt = getPoemPromptDetails(language, mainWord, emotion);
+            // Detect language for mainWord and subWord
+            const mainWordLanguage = await detectLanguage(mainWord);
+            const subWordLanguage = await detectLanguage(subWord);
+
+            // Prioritize subWord's language if they differ
+            const detectedLanguage = mainWordLanguage !== subWordLanguage ? subWordLanguage : mainWordLanguage;
+
+            // Generate prompt with detected language
+            const inputPrompt = getPoemPromptDetails(detectedLanguage, mainWord, subWord, emotion);
 
             console.log("--- Generating Poem ---");
-            console.log("Params:", { mainWord, emotion, language });
-            // console.log("Full Prompt:", inputPrompt); // Uncomment to debug prompt
+            console.log("Params:", { mainWord, subWord, emotion, detectedLanguage });
 
             const completion = await openai.chat.completions.create({
                 model: MODEL_NAME,
+                max_tokens: 1000,
                 messages: [
                     { role: "user", content: inputPrompt }
                 ],
             });
 
             let rawResponseContent = completion.choices[0].message.content;
-            console.log("Raw OpenAI Response Content:\n", rawResponseContent);
             if (!rawResponseContent || rawResponseContent.trim() === "") {
                 console.warn("OpenAI returned empty or whitespace-only content.");
                 return res.status(500).json({ error: 'The model returned an empty response. Please try again.' });
@@ -84,10 +104,9 @@ export default async function handler(req, res) {
                         jsonData = JSON.parse(jsonStringCandidate);
                     } catch (e) {
                         console.warn(`Failed to parse JSON string after separator: "${jsonStringCandidate}"`, e.message);
-                        // jsonData remains null
                     }
                 } else {
-                     console.warn(`Content after separator "${CUSTOM_SEPARATOR}" does not look like JSON: "${jsonStringCandidate}"`);
+                    console.warn(`Content after separator "${CUSTOM_SEPARATOR}" does not look like JSON: "${jsonStringCandidate}"`);
                 }
             } else {
                 console.warn(`Custom separator "${CUSTOM_SEPARATOR}" not found in the model's response.`);
