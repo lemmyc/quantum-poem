@@ -1,0 +1,55 @@
+@import url("https://fonts.googleapis.com/css?family=Lato:400,400i,700");
+@font-face {
+  font-family: "Dusseldot";
+  src: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/108082/Dusseldot-variable-web.woff2")
+      format("woff2 supports variations"),
+    url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/108082/Dusseldot-variable-web.woff2")
+      format("woff2-variations");
+  font-display: swap;
+  font-weight: 50 250;
+}
+
+.title_header {
+  span {
+    font-size: 55px;
+    font-family: "Dusseldot";
+    text-shadow: -5px 6px 13px rgba(150, 150, 150, 1);
+    color:#d94a3f;
+    text-align: center;
+    font-weight: 250;
+    display: inline-block;
+    margin: 0 2px;
+  }
+}
+
+
+
+@for $i from 1 through 100 {
+  @keyframes pulse#{$i} {
+    0% {
+      font-variation-settings: "wdth" 50;
+    }
+    20% {
+      font-variation-settings: "wdth" 145;
+    }
+    30% {
+      font-variation-settings: "wdth" 155;
+    }
+    50% {
+      font-variation-settings: "wdth" 250;
+    }
+    70% {
+      font-variation-settings: "wdth" 155;
+    }
+    80% {
+      font-variation-settings: "wdth" 145;
+    }
+    100% {
+      font-variation-settings: "wdth" 50;
+    }
+  }
+
+  .ch#{$i} {
+    animation: pulse#{$i} 10s linear infinite;
+  }
+}
