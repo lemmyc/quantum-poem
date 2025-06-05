@@ -32,15 +32,17 @@ Create or clone a directory with the following files:
 
 ### 2. Create and Activate Virtual Environment
 
+> **Note:** You only need to create the virtual environment (`venv`) once. For future sessions, just activate it (skip the creation step).
+
 #### **Windows**
 ```bash
-python -m venv venv
-venv\Scripts\activate
+python -m venv venv   # (THIS IS CREATION STEP, only run once)
+venv\Scripts\activate # (Run this every time you start a new terminal)
 ```
 #### **Linux/Mac**
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv venv  # (THIS IS CREATION STEP, only run once)
+source venv/bin/activate # (Run this every time you start a new terminal)
 ```
 
 ### 3. Install Dependencies
