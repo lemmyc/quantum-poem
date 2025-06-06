@@ -1,0 +1,12 @@
+qiskit
+qiskit-aer
+numpy
+langchain
+langchain-openai
+langchain-community
+chromadb
+fastapi
+uvicorn[standard]
+pandas
+python-dotenv
+pydantic
