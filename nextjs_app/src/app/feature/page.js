@@ -1,10 +1,11 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import dynamic from 'next/dynamic';
+import './page.scss';
 
-const ElectronOrbit = dynamic(() => import('@/components/ElectronOrbit'), {
+const WordSphere = dynamic(() => import('@/components/WordSphere/WordSphere'), {
   ssr: false,
   loading: () => <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}>Loading 3D...</div>
 });
@@ -16,6 +17,10 @@ export default function FeaturePage() {
   const [keywords, setKeywords] = useState(null);
   const [poem, setPoem] = useState('');
   const [poemDisplay, setPoemDisplay] = useState('');
+  const [hoveredWordIdx, setHoveredWordIdx] = useState(null);
+  const [sphereToCorner, setSphereToCorner] = useState(false);
+  const poemBoxRef = useRef();
+  const [extraPoems, setExtraPoems] = useState([]); // mỗi phần tử: {text, top, right}
 
   // Hiệu ứng typing cho poem
   useEffect(() => {
@@ -61,6 +66,7 @@ export default function FeaturePage() {
             setMainError("Could not determine relevant keywords from the generated list. Please try again.");
             return;
         }
+
         setKeywords(newSortedWords)
         console.log('Keywords API result:', newSortedWords);
       } catch (err) {
@@ -70,38 +76,157 @@ export default function FeaturePage() {
     fetchKeywords();
   }, [word]);
 
+  useEffect(() => {
+    if (extraPoems.length === 0) return;
+    // Chỉ typing cho poem mới nhất
+    const lastIdx = extraPoems.length - 1;
+    const poem = extraPoems[lastIdx];
+    if (!poem || poem.displayText === poem.text) return;
+
+    let i = 0;
+    const interval = setInterval(() => {
+      setExtraPoems(poems => {
+        const updated = [...poems];
+        const current = updated[lastIdx];
+        if (current.displayText.length < current.text.length) {
+          updated[lastIdx] = {
+            ...current,
+            displayText: current.text.slice(0, current.displayText.length + 1)
+          };
+        }
+        return updated;
+      });
+      i++;
+      if (i >= poem.text.length) clearInterval(interval);
+    }, 30);
+    return () => clearInterval(interval);
+  }, [extraPoems]);
+
   return (
     <div className="relative min-h-screen">
       {/* 3D Quantum Sphere background */}
-      <ElectronOrbit keywords={keywords} onPoem={setPoem} />
+      <WordSphere
+        mainWord={word}
+        keywords={keywords}
+        onPoem={setPoem}
+        sphereToCorner={sphereToCorner}
+      />
       {/* Poem overlay góc trên phải */}
       {poemDisplay && (
-        <div style={{
-          position: 'fixed',
-          top: 24,
-          right: 32,
-          minWidth: 320,
-          maxWidth: 480,
-          background: 'rgba(30,30,30,0.95)',
-          color: '#fff',
-          borderRadius: 12,
-          padding: '20px 28px',
-          fontSize: 20,
-          fontFamily: 'serif',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-          zIndex: 1000,
-          whiteSpace: 'pre-line',
-          letterSpacing: 0.5,
-          border: '1px solid #444',
-          animation: 'fadeIn 0.5s'
-        }}>
-          {poemDisplay}
+        <div
+          ref={poemBoxRef}
+          style={{
+            position: 'fixed',
+            top: 24,
+            right: "38%",
+            minWidth: 320,
+            maxWidth: 480,
+            background: 'rgba(30,30,30,0.95)',
+            color: '#fff',
+            borderRadius: 12,
+            padding: '20px 28px',
+            fontSize: 20,
+            fontFamily: 'serif',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
+            zIndex: 1000,
+            whiteSpace: 'pre-line',
+            letterSpacing: 0.5,
+            border: '1px solid #444',
+            animation: 'fadeIn 0.5s'
+          }}
+        >
+          {poemDisplay.split(/(\s+)/).map((word, idx) =>
+            word.trim() === '' ? word : (
+              <span
+                key={idx}
+                onMouseEnter={() => setHoveredWordIdx(idx)}
+                onMouseLeave={() => setHoveredWordIdx(null)}
+                onClick={async () => {
+                  setSphereToCorner(true);
+                  if (poemBoxRef.current) {
+                    poemBoxRef.current.classList.remove('poem-shake');
+                    void poemBoxRef.current.offsetWidth;
+                    poemBoxRef.current.classList.add('poem-shake');
+                  }
+                  // Gọi API generateKeywords
+                  try {
+                    const res = await fetch('/api/generateKeywords', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ inputText: word.trim(), emotion: 'happy' }),
+                    });
+                    const data = await res.json();
+                    // Tạo poem mới từ kết quả (ví dụ: nối các từ lại)
+                    const newPoem = data.keywords ? data.keywords.join(' ') : JSON.stringify(data);
+                    setExtraPoems(poems => [
+                      ...poems,
+                      { text: newPoem, displayText: '' }
+                    ]);
+                  } catch (e) {
+                    setExtraPoems(poems => [...poems, { text: 'Lỗi API!' }]);
+                  }
+                }}
+                style={{
+                  color: hoveredWordIdx === idx ? '#FFD700' : undefined,
+                  fontWeight: hoveredWordIdx === idx ? 'bold' : undefined,
+                  textDecoration: hoveredWordIdx === idx ? 'underline' : undefined,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {word}
+              </span>
+            )
+          )}
         </div>
       )}
+      {extraPoems.map((poem, i) => (
+        <div
+          key={i}
+          className="poem-extra"
+          style={{
+            position: 'fixed',
+            top: 120 + i * 100, // mỗi poem cách nhau 100px
+            right: "38%",
+            minWidth: 320,
+            maxWidth: 480,
+            background: 'rgba(30,30,30,0.95)',
+            color: '#fff',
+            borderRadius: 12,
+            padding: '20px 28px',
+            fontSize: 20,
+            fontFamily: 'serif',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
+            zIndex: 1000,
+            whiteSpace: 'pre-line',
+            letterSpacing: 0.5,
+            border: '1px solid #444',
+            animation: 'fadeIn 0.5s'
+          }}
+        >
+          {poem.displayText}
+        </div>
+      ))}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-20px);}
           to { opacity: 1; transform: translateY(0);}
+        }
+        @keyframes shake {
+          0% { transform: translate(0, 0);}
+          10% { transform: translate(-8px, 0);}
+          20% { transform: translate(8px, 0);}
+          30% { transform: translate(-8px, 0);}
+          40% { transform: translate(8px, 0);}
+          50% { transform: translate(-8px, 0);}
+          60% { transform: translate(8px, 0);}
+          70% { transform: translate(-8px, 0);}
+          80% { transform: translate(8px, 0);}
+          90% { transform: translate(-8px, 0);}
+          100% { transform: translate(0, 0);}
+        }
+        .poem-shake {
+          animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
         }
       `}</style>
     </div>

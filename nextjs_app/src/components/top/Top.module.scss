@@ -1,3 +1,4 @@
+@import url("https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap");
 // Biến màu sắc
 $primary: #d94a3f;
 $primary-dark: #b43a2f;
@@ -112,9 +113,10 @@ $glow: #3cf0ff;
 
 .trialButton {
   background-color: $primary;
+  font-family: "Silkscreen", cursive;
   color: white;
-  font-size: 50px;
-  font-weight: 500;
+  font-size: 30px;
+  font-weight: 400;
   padding: 0.25rem 1rem;
   border-radius: 3rem;
   transition: background-color 0.2s;
