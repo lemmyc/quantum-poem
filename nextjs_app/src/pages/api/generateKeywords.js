@@ -3,7 +3,8 @@ import OpenAI from "openai";
 
 const openai = new OpenAI(); // API key is read from OPENAI_API_KEY env var
 
-const MODEL_NAME = process.env.OPENAI_MODEL_NAME;
+const MODEL_NAME = process.env.OPENAI_MODEL_NAME || "gpt-4.1";
+
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
