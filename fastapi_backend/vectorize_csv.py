@@ -6,7 +6,7 @@ from typing import List
 from dotenv import load_dotenv
 
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 from langchain.schema import Document
 
 # Load environment variables
@@ -159,8 +159,8 @@ def main():
     Main function to vectorize CSV files
     """
     # Configuration
-    CSV_FOLDER = "./data"  # Change this to your CSV folder path
-    PERSIST_DIR = "./chroma_db234"
+    CSV_FOLDER = ""  # Change this to your CSV folder path
+    PERSIST_DIR = "./chroma_db"
     
     print("🚀 Starting CSV vectorization process...")
     

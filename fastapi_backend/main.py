@@ -11,7 +11,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
+
+from contextlib import asynccontextmanager
 
 # Load environment variables
 load_dotenv()
@@ -133,18 +135,8 @@ class TextSearchServer:
             traceback.print_exc()
             raise Exception(f"Search failed: {str(e)}")
 
-
-app = FastAPI(title="Quantum Poetry Generator API")
-
-class ShuffleRequest(BaseModel):
-    data: List[str]
-
-
-# Initialize search server
-search_server = None
-
-@app.on_event("startup")
-async def startup_event():
+@asynccontextmanager
+async def lifespan(app: FastAPI):
     """Initialize the search server on startup"""
     global search_server
     try:
@@ -152,7 +144,16 @@ async def startup_event():
         print("✅ Search server initialized successfully!")
     except Exception as e:
         print(f"❌ Failed to initialize search server: {str(e)}")
+    yield
 
+app = FastAPI(title="Quantum Poetry Generator API", lifespan=lifespan)
+
+class ShuffleRequest(BaseModel):
+    data: List[str]
+
+
+# Initialize search server
+search_server = None
 
 @app.post("/api/shuffle")
 async def shuffle_data(request: ShuffleRequest):
@@ -200,14 +201,14 @@ async def search_texts(request: SearchRequest):
         results = search_server.search_similar_texts(
             request.query, 
             request.top_k, 
-            request.language # Thêm language
+            request.language
         )
         
         return SearchResponse(
             query=request.query,
             results=results,
             total_results=len(results),
-            language_filter=request.language # Thêm thông tin này vào response
+            language_filter=request.language 
         )
         
     except Exception as e:
