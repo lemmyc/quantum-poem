@@ -4,7 +4,7 @@ import './Slogan.scss';
 
 const Top = () => {
   const handleScroll = () => {
-    const targetPosition = 1000;
+    const targetPosition = 700;
     const startPosition = window.pageYOffset;
     const distance = targetPosition - startPosition;
     const duration = 1400; 
@@ -34,7 +34,7 @@ const Top = () => {
 
   return (
     <>
-      <header className={styles.header}>
+      {/* <header className={styles.header}> */}
         <div className={styles.logo + " title_header"}>
           <span className="ch1">Q</span>
           <span className="ch2">U</span>
@@ -51,7 +51,7 @@ const Top = () => {
           <span className="ch13">R</span>
           <span className="ch14">Y</span>
         </div>
-      </header>
+      {/* </header> */}
       <main className={styles.main}>
         <section className={styles.content}>
           <h1 className={styles.title + " text_slogan"}>
@@ -75,9 +75,9 @@ const Top = () => {
           <img
             alt="3D blue metallic spiral shape with glowing edges on black background"
             className={styles.image}
-            height="400"
+            height="320"
             src="./assets/3D_Shape.png"
-            width="400"
+            width="320"
           />
         </section>
       </main>

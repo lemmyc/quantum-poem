@@ -2,17 +2,13 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, useRef } from 'react';
-import dynamic from 'next/dynamic';
+import SunModel from '../../components/SunModel/SunModel';
 import './page.scss';
-
-const WordSphere = dynamic(() => import('@/components/WordSphere/WordSphere'), {
-  ssr: false,
-  loading: () => <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}>Loading 3D...</div>
-});
+import HackerStatsPanel from '../../components/HackerStatsPanel';
 
 export default function FeaturePage() {
   const searchParams = useSearchParams();
-  const word = searchParams.get('word');
+  const mainWord = searchParams.get('word');
   const language = searchParams.get('language');
   const [keywords, setKeywords] = useState(null);
   const [poem, setPoem] = useState('');
@@ -37,12 +33,12 @@ export default function FeaturePage() {
 
   useEffect(() => {
     async function fetchKeywords() {
-      if (!word) return;
+      if (!mainWord) return;
       try {
         const keywordsResponse = await fetch('/api/generateKeywords', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ inputText: word, emotion: 'happy' }),
+          body: JSON.stringify({ inputText: mainWord, emotion: 'happy' }),
         });
         const tenWords = await keywordsResponse.json();
 
@@ -74,7 +70,7 @@ export default function FeaturePage() {
       }
     }
     fetchKeywords();
-  }, [word]);
+  }, [mainWord]);
 
   useEffect(() => {
     if (extraPoems.length === 0) return;
@@ -104,13 +100,19 @@ export default function FeaturePage() {
 
   return (
     <div className="relative min-h-screen">
+      {/* Hacker-stats cyber panel góc phải */}
+      <HackerStatsPanel />
       {/* 3D Quantum Sphere background */}
-      <WordSphere
-        mainWord={word}
-        keywords={keywords}
-        onPoem={setPoem}
-        sphereToCorner={sphereToCorner}
-      />
+      {Array.isArray(keywords) && keywords.length > 0 ? (
+        <SunModel
+          mainWord={mainWord}
+          keywords={keywords}
+          onPoem={setPoem}
+          sphereToCorner={sphereToCorner}
+        />
+      ) : (
+        <div>Loading...</div>
+      )}
       {/* Poem overlay góc trên phải */}
       {poemDisplay && (
         <div
@@ -148,22 +150,27 @@ export default function FeaturePage() {
                     void poemBoxRef.current.offsetWidth;
                     poemBoxRef.current.classList.add('poem-shake');
                   }
-                  // Gọi API generateKeywords
+                  // Gọi API generatePoem với mainWord từ URL và subWord là từ được click
                   try {
-                    const res = await fetch('/api/generateKeywords', {
+                    const res = await fetch('/api/generatePoem', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({ inputText: word.trim(), emotion: 'happy' }),
+                      body: JSON.stringify({
+                        mainWord: mainWord,
+                        subWord: word.trim(),
+                        emotion: "sad",
+                        language: "vietnamese"
+                      }),
                     });
                     const data = await res.json();
-                    // Tạo poem mới từ kết quả (ví dụ: nối các từ lại)
-                    const newPoem = data.keywords ? data.keywords.join(' ') : JSON.stringify(data);
+                    const newPoem = data.poem || 'Không thể tạo bài thơ mới';
                     setExtraPoems(poems => [
                       ...poems,
                       { text: newPoem, displayText: '' }
                     ]);
                   } catch (e) {
-                    setExtraPoems(poems => [...poems, { text: 'Lỗi API!' }]);
+                    console.error('Error generating poem:', e);
+                    setExtraPoems(poems => [...poems, { text: 'Lỗi khi tạo bài thơ mới!' }]);
                   }
                 }}
                 style={{

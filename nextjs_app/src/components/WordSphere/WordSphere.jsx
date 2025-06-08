@@ -182,7 +182,7 @@ export default function WordSphere({ keywords = [], onPoem, mainWord }) {
         body: JSON.stringify({
           mainWord,
           subWord,
-          emotion: "love",
+          emotion: "sad",
           language: "vietnamese"
         }),
       });

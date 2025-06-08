@@ -10,12 +10,14 @@
 }
 
 .title_header {
+  text-align: center;
+  font-size: 36px;
+
+
   span {
-    font-size: 55px;
     font-family: "Dusseldot";
     text-shadow: -5px 6px 13px rgba(150, 150, 150, 1);
     color:#d94a3f;
-    text-align: center;
     font-weight: 250;
     display: inline-block;
     margin: 0 2px;
