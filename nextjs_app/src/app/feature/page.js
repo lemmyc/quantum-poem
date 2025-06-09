@@ -1,12 +1,12 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, Suspense } from 'react';
 import SunModel from '../../components/SunModel/SunModel';
 import './page.scss';
 import HackerStatsPanel from '../../components/HackerStatsPanel';
 
-export default function FeaturePage() {
+function FeatureContent() {
   const searchParams = useSearchParams();
   const mainWord = searchParams.get('word');
   const language = searchParams.get('language');
@@ -237,5 +237,13 @@ export default function FeaturePage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function FeaturePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <FeatureContent />
+    </Suspense>
   );
 } 
