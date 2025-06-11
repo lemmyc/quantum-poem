@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from langchain_openai import OpenAIEmbeddings
-from langchain_chroma import Chroma
+from langchain.vectorstores import Chroma
 
 from contextlib import asynccontextmanager
 
