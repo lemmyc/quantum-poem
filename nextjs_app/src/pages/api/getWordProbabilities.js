@@ -1,5 +1,7 @@
 // src/pages/api/getWordProbabilities.js
 import fetch from 'node-fetch'; // Required for making API calls in a Node.js environment
+const PYTHON_API_BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8000";
+const SHUFFLE_API_URL = PYTHON_API_BASE_URL + "/api/shuffle";
 
 export default async function handler(req, res) {
     if (req.method === 'POST') {
@@ -12,12 +14,11 @@ export default async function handler(req, res) {
         }
   
         // --- Call external API to get word frequency data ---
-        const shuffleApiUrl = 'http://localhost:8000/api/shuffle'; 
         let distributionFromApi = {}; 
 
         try {
             // Make a POST request to the shuffle API
-            const apiResponse = await fetch(shuffleApiUrl, {
+            const apiResponse = await fetch(SHUFFLE_API_URL, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

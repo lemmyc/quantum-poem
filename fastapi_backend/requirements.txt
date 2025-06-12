@@ -10,3 +10,4 @@ uvicorn[standard]
 pandas
 python-dotenv
 pydantic
+langchain_chroma

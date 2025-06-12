@@ -5,7 +5,8 @@ import OpenAI from "openai";
 const openai = new OpenAI(); 
 const MODEL_NAME = process.env.OPENAI_MODEL_NAME || "gpt-4.1";
 const MAX_TOKENS = 8192;
-const SEARCH_API_URL = "http://localhost:8000/api/search-poem";
+const PYTHON_API_BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8000";
+const SEARCH_API_URL = PYTHON_API_BASE_URL + "/api/search-poem";
 const SEARCH_API_TOP_K = 5;
 const CUSTOM_SEPARATOR = "<SEP/>";
 
