@@ -35,7 +35,8 @@ const Top = () => {
   return (
     <>
       {/* <header className={styles.header}> */}
-        <div className={styles.logo + " title_header"}>
+      <div className={styles.container}>
+      <div className={styles.logo + " title_header"}>
           <span className="ch1">Q</span>
           <span className="ch2">U</span>
           <span className="ch3">A</span>
@@ -81,6 +82,8 @@ const Top = () => {
           />
         </section>
       </main>
+      </div>
+        
     </>
   );
 };
