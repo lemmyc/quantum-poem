@@ -98,6 +98,7 @@ export default function Projects() {
                         value={inputValue}
                         onChange={handleInputChange}
                         autoFocus
+                        onKeyDown={e => { if (e.key === 'Enter') handleArrowClick(); }}
                     />
                     <ArrowRightOutlined 
                         className={styles.arrowIcon} 

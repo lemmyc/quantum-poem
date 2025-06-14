@@ -3,11 +3,11 @@
 import styles from './page.module.scss'
 import React from 'react';
 import dynamic from 'next/dynamic';
-import SmoothScroll from '@/components/LanguageSelector/smoothScroll';
-import Projects from '@/components/LanguageSelector/projects';
-import Top from '@/components/top/Top';
+import SmoothScroll from '../components/LanguageSelector/smoothScroll';
+import Projects from '../components/LanguageSelector/projects';
+import Top from '../components/top/Top.jsx';
 
-const Earth = dynamic(() => import('@/components/LanguageSelector/earth'), {
+const Earth = dynamic(() => import('../components/LanguageSelector/earth'), {
   ssr: false,
   loading: () => (
     <div className={styles.earthPlaceholder}>

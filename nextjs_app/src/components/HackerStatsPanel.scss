@@ -1,0 +1,86 @@
+.hacker-stats-panel {
+  position: fixed;
+  top: 24px;
+  right: 32px;
+  min-width: 260px;
+  background: rgba(10, 20, 30, 0.95);
+  border: 2px solid #00ffe7;
+  border-radius: 10px;
+  box-shadow: 0 0 20px #00ffe7aa;
+  color: #00ffe7;
+  font-family: 'Share Tech Mono', 'Fira Mono', 'Consolas', monospace;
+  padding: 18px 24px 14px 24px;
+  z-index: 2000;
+  overflow: hidden;
+  animation: cyber-glow 2.2s ease-in-out infinite alternate;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      transparent,
+      transparent 6px,
+      rgba(0,255,231,0.04) 7px,
+      transparent 8px
+    );
+    z-index: 1;
+  }
+}
+
+@keyframes cyber-glow {
+  0% {
+    box-shadow: 0 0 8px #00ffe7, 0 0 24px #00ffe7aa, 0 0 2px #00ffe7;
+    border-color: #00ffe7;
+  }
+  50% {
+    box-shadow: 0 0 18px #00ffe7, 0 0 64px #00ffe7cc, 0 0 8px #00ffe7;
+    border-color: #7fffd4;
+  }
+  100% {
+    box-shadow: 0 0 8px #00ffe7, 0 0 24px #00ffe7aa, 0 0 2px #00ffe7;
+    border-color: #00ffe7;
+  }
+}
+
+.panel-title {
+  font-size: 1.1rem;
+  letter-spacing: 2px;
+  margin-bottom: 10px;
+  color: #7fffd4;
+  text-shadow: 0 0 6px #00ffe7;
+}
+
+.panel-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 1.05rem;
+  margin-bottom: 7px;
+  z-index: 2;
+  position: relative;
+
+  &.small {
+    font-size: 0.95rem;
+    opacity: 0.7;
+  }
+}
+
+.label {
+  color: #00ffe7;
+  font-weight: bold;
+  letter-spacing: 1px;
+}
+
+.value {
+  color: #fff;
+  text-shadow: 0 0 4px #00ffe7;
+}
+
+.panel-divider {
+  border-bottom: 1px dashed #00ffe7;
+  margin: 10px 0 8px 0;
+  opacity: 0.4;
+} 
