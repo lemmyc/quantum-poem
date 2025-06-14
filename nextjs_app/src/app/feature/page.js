@@ -17,6 +17,32 @@ function FeatureContent() {
   const [sphereToCorner, setSphereToCorner] = useState(false);
   const poemBoxRef = useRef();
   const [extraPoems, setExtraPoems] = useState([]); // mỗi phần tử: {text, top, right}
+  const [hoveredExtraPoemWord, setHoveredExtraPoemWord] = useState({ poemIdx: null, wordIdx: null });
+
+  const handleGeneratePoemFromSunModel = async (subWord) => {
+    if (!mainWord) return;
+    try {
+      const res = await fetch('/api/generatePoem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mainWord: mainWord,
+          subWord: subWord,
+          emotion: "sad",
+          language: "vietnamese"
+        }),
+      });
+      const data = await res.json();
+      const newPoem = data.poem || 'Không thể tạo bài thơ mới';
+      setExtraPoems(poems => [
+        ...poems,
+        { text: newPoem, displayText: '' }
+      ]);
+    } catch (e) {
+      console.error('Error generating poem from SunModel:', e);
+      setExtraPoems(poems => [...poems, { text: 'Lỗi khi tạo bài thơ mới!' }]);
+    }
+  };
 
   // Hiệu ứng typing cho poem
   useEffect(() => {
@@ -99,7 +125,7 @@ function FeatureContent() {
   }, [extraPoems]);
 
   return (
-    <div className="relative min-h-screen">
+    <div className="feature-container">
       {/* Hacker-stats cyber panel góc phải */}
       <HackerStatsPanel />
       {/* 3D Quantum Sphere background */}
@@ -109,6 +135,7 @@ function FeatureContent() {
           keywords={keywords}
           onPoem={setPoem}
           sphereToCorner={sphereToCorner}
+          onGeneratePoemFromSunModel={handleGeneratePoemFromSunModel}
         />
       ) : (
         <div>Loading...</div>
@@ -150,28 +177,10 @@ function FeatureContent() {
                     void poemBoxRef.current.offsetWidth;
                     poemBoxRef.current.classList.add('poem-shake');
                   }
-                  // Gọi API generatePoem với mainWord từ URL và subWord là từ được click
-                  try {
-                    const res = await fetch('/api/generatePoem', {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify({
-                        mainWord: mainWord,
-                        subWord: word.trim(),
-                        emotion: "sad",
-                        language: "vietnamese"
-                      }),
-                    });
-                    const data = await res.json();
-                    const newPoem = data.poem || 'Không thể tạo bài thơ mới';
-                    setExtraPoems(poems => [
-                      ...poems,
-                      { text: newPoem, displayText: '' }
-                    ]);
-                  } catch (e) {
-                    console.error('Error generating poem:', e);
-                    setExtraPoems(poems => [...poems, { text: 'Lỗi khi tạo bài thơ mới!' }]);
-                  }
+                  // Logic này sẽ được thay thế bằng hàm handleGeneratePoemFromSunModel
+                  // Cần xem xét lại cách xử lý onClick của span nếu bạn không muốn gọi API 2 lần
+                  // hoặc muốn behavior khác.
+                  // Hiện tại, tôi sẽ không xóa code này trong lần edit này.
                 }}
                 style={{
                   color: hoveredWordIdx === idx ? '#FFD700' : undefined,
@@ -211,7 +220,24 @@ function FeatureContent() {
             animation: 'fadeIn 0.5s'
           }}
         >
-          {poem.displayText}
+          {poem.displayText.split(/(\s+)/).map((word, idx) =>
+            word.trim() === '' ? word : (
+              <span
+                key={idx}
+                onMouseEnter={() => setHoveredExtraPoemWord({ poemIdx: i, wordIdx: idx })}
+                onMouseLeave={() => setHoveredExtraPoemWord({ poemIdx: null, wordIdx: null })}
+                style={{
+                  color: (hoveredExtraPoemWord.poemIdx === i && hoveredExtraPoemWord.wordIdx === idx) ? '#FFD700' : undefined,
+                  fontWeight: (hoveredExtraPoemWord.poemIdx === i && hoveredExtraPoemWord.wordIdx === idx) ? 'bold' : undefined,
+                  textDecoration: (hoveredExtraPoemWord.poemIdx === i && hoveredExtraPoemWord.wordIdx === idx) ? 'underline' : undefined,
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {word}
+              </span>
+            )
+          )}
         </div>
       ))}
       <style>{`
@@ -246,4 +272,4 @@ export default function FeaturePage() {
       <FeatureContent />
     </Suspense>
   );
-} 
+}
