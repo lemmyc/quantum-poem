@@ -5,19 +5,22 @@ import { useEffect, useState, useRef, Suspense } from 'react';
 import SunModel from '../../components/SunModel/SunModel';
 import './page.scss';
 import HackerStatsPanel from '../../components/HackerStatsPanel';
+import PoemDisplay from '../../components/PoemAnimation/poemDisplay';
 
 function FeatureContent() {
   const searchParams = useSearchParams();
   const mainWord = searchParams.get('word');
   const language = searchParams.get('language');
   const [keywords, setKeywords] = useState(null);
-  const [poem, setPoem] = useState('');
-  const [poemDisplay, setPoemDisplay] = useState('');
-  const [hoveredWordIdx, setHoveredWordIdx] = useState(null);
+  const [poem, setPoem] = useState({ text: '', animate: false }); // Bài thơ chính: text và trạng thái animate
+  const [hoveredWordIdx, setHoveredWordIdx] = useState(null); // Cho bài thơ chính
   const [sphereToCorner, setSphereToCorner] = useState(false);
   const poemBoxRef = useRef();
-  const [extraPoems, setExtraPoems] = useState([]); // mỗi phần tử: {text, top, right}
+  const [extraPoems, setExtraPoems] = useState([]); // mỗi phần tử: {text, animate}
   const [hoveredExtraPoemWord, setHoveredExtraPoemWord] = useState({ poemIdx: null, wordIdx: null });
+  const [mainError, setMainError] = useState(null); // Define mainError state
+  const [pendingPoem, setPendingPoem] = useState(null);
+  const [fadeOut, setFadeOut] = useState(false);
 
   const handleGeneratePoemFromSunModel = async (subWord) => {
     if (!mainWord) return;
@@ -33,29 +36,16 @@ function FeatureContent() {
         }),
       });
       const data = await res.json();
-      const newPoem = data.poem || 'Không thể tạo bài thơ mới';
-      setExtraPoems(poems => [
-        ...poems,
-        { text: newPoem, displayText: '' }
-      ]);
+      const newPoemText = data.poem || 'Không thể tạo bài thơ mới';
+      setExtraPoems([{ text: newPoemText, animate: false }]);
+      setTimeout(() => {
+        setExtraPoems([{ text: newPoemText, animate: true }]);
+      }, 30);
     } catch (e) {
       console.error('Error generating poem from SunModel:', e);
-      setExtraPoems(poems => [...poems, { text: 'Lỗi khi tạo bài thơ mới!' }]);
+      setExtraPoems([{ text: 'Lỗi khi tạo bài thơ mới!', animate: true }]);
     }
   };
-
-  // Hiệu ứng typing cho poem
-  useEffect(() => {
-    if (!poem) return;
-    setPoemDisplay('');
-    let i = 0;
-    const interval = setInterval(() => {
-      setPoemDisplay(poem.slice(0, i + 1));
-      i++;
-      if (i >= poem.length) clearInterval(interval);
-    }, 30);
-    return () => clearInterval(interval);
-  }, [poem]);
 
   useEffect(() => {
     async function fetchKeywords() {
@@ -89,40 +79,15 @@ function FeatureContent() {
             return;
         }
 
-        setKeywords(newSortedWords)
+        setKeywords(newSortedWords);
         console.log('Keywords API result:', newSortedWords);
       } catch (err) {
         console.error('Error fetching keywords:', err);
+        setMainError('Error fetching keywords: ' + err.message);
       }
     }
     fetchKeywords();
   }, [mainWord]);
-
-  useEffect(() => {
-    if (extraPoems.length === 0) return;
-    // Chỉ typing cho poem mới nhất
-    const lastIdx = extraPoems.length - 1;
-    const poem = extraPoems[lastIdx];
-    if (!poem || poem.displayText === poem.text) return;
-
-    let i = 0;
-    const interval = setInterval(() => {
-      setExtraPoems(poems => {
-        const updated = [...poems];
-        const current = updated[lastIdx];
-        if (current.displayText.length < current.text.length) {
-          updated[lastIdx] = {
-            ...current,
-            displayText: current.text.slice(0, current.displayText.length + 1)
-          };
-        }
-        return updated;
-      });
-      i++;
-      if (i >= poem.text.length) clearInterval(interval);
-    }, 30);
-    return () => clearInterval(interval);
-  }, [extraPoems]);
 
   return (
     <div className="feature-container">
@@ -133,135 +98,46 @@ function FeatureContent() {
         <SunModel
           mainWord={mainWord}
           keywords={keywords}
-          onPoem={setPoem}
+          onPoem={(newPoemText) => setPoem({ text: newPoemText, animate: false })} // Bài thơ chính không animation
           sphereToCorner={sphereToCorner}
           onGeneratePoemFromSunModel={handleGeneratePoemFromSunModel}
         />
       ) : (
         <div>Loading...</div>
       )}
-      {/* Poem overlay góc trên phải */}
-      {poemDisplay && (
-        <div
-          ref={poemBoxRef}
-          style={{
-            position: 'fixed',
-            top: 24,
-            right: "38%",
-            minWidth: 320,
-            maxWidth: 480,
-            background: 'rgba(30,30,30,0.95)',
-            color: '#fff',
-            borderRadius: 12,
-            padding: '20px 28px',
-            fontSize: 20,
-            fontFamily: 'serif',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-            zIndex: 1000,
-            whiteSpace: 'pre-line',
-            letterSpacing: 0.5,
-            border: '1px solid #444',
-            animation: 'fadeIn 0.5s'
-          }}
-        >
-          {poemDisplay.split(/(\s+)/).map((word, idx) =>
-            word.trim() === '' ? word : (
-              <span
-                key={idx}
-                onMouseEnter={() => setHoveredWordIdx(idx)}
-                onMouseLeave={() => setHoveredWordIdx(null)}
-                onClick={async () => {
-                  setSphereToCorner(true);
-                  if (poemBoxRef.current) {
-                    poemBoxRef.current.classList.remove('poem-shake');
-                    void poemBoxRef.current.offsetWidth;
-                    poemBoxRef.current.classList.add('poem-shake');
-                  }
-                  // Logic này sẽ được thay thế bằng hàm handleGeneratePoemFromSunModel
-                  // Cần xem xét lại cách xử lý onClick của span nếu bạn không muốn gọi API 2 lần
-                  // hoặc muốn behavior khác.
-                  // Hiện tại, tôi sẽ không xóa code này trong lần edit này.
-                }}
-                style={{
-                  color: hoveredWordIdx === idx ? '#FFD700' : undefined,
-                  fontWeight: hoveredWordIdx === idx ? 'bold' : undefined,
-                  textDecoration: hoveredWordIdx === idx ? 'underline' : undefined,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {word}
-              </span>
-            )
-          )}
-        </div>
-      )}
-      {extraPoems.map((poem, i) => (
-        <div
-          key={i}
-          className="poem-extra"
-          style={{
-            position: 'fixed',
-            top: 120 + i * 100, // mỗi poem cách nhau 100px
-            right: "38%",
-            minWidth: 320,
-            maxWidth: 480,
-            background: 'rgba(30,30,30,0.95)',
-            color: '#fff',
-            borderRadius: 12,
-            padding: '20px 28px',
-            fontSize: 20,
-            fontFamily: 'serif',
-            boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-            zIndex: 1000,
-            whiteSpace: 'pre-line',
-            letterSpacing: 0.5,
-            border: '1px solid #444',
-            animation: 'fadeIn 0.5s'
-          }}
-        >
-          {poem.displayText.split(/(\s+)/).map((word, idx) =>
-            word.trim() === '' ? word : (
-              <span
-                key={idx}
-                onMouseEnter={() => setHoveredExtraPoemWord({ poemIdx: i, wordIdx: idx })}
-                onMouseLeave={() => setHoveredExtraPoemWord({ poemIdx: null, wordIdx: null })}
-                style={{
-                  color: (hoveredExtraPoemWord.poemIdx === i && hoveredExtraPoemWord.wordIdx === idx) ? '#FFD700' : undefined,
-                  fontWeight: (hoveredExtraPoemWord.poemIdx === i && hoveredExtraPoemWord.wordIdx === idx) ? 'bold' : undefined,
-                  textDecoration: (hoveredExtraPoemWord.poemIdx === i && hoveredExtraPoemWord.wordIdx === idx) ? 'underline' : undefined,
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                {word}
-              </span>
-            )
-          )}
-        </div>
+    
+
+      {/* Hiển thị các bài thơ phụ */}
+      {extraPoems.map((poemItem, i) => (
+            <PoemDisplay 
+              text={poemItem.text} 
+              key={i}
+              onWordClick={async (word) => {
+                try {
+                  const res = await fetch('/api/generatePoem', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      mainWord: mainWord,
+                      subWord: word,
+                      emotion: "sad",
+                      language: "vietnamese"
+                    }),
+                  });
+                  const data = await res.json();
+                  const newPoemText = data.poem || 'Không thể tạo bài thơ mới';
+                  setExtraPoems([{ text: newPoemText, animate: false }]);
+                  setTimeout(() => {
+                    setExtraPoems([{ text: newPoemText, animate: true }]);
+                  }, 30);
+                } catch (e) {
+                  console.error('Error generating poem from word click:', e);
+                  setExtraPoems([{ text: 'Lỗi khi tạo bài thơ mới!', animate: true }]);
+                }
+              }}
+            />
       ))}
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-20px);}
-          to { opacity: 1; transform: translateY(0);}
-        }
-        @keyframes shake {
-          0% { transform: translate(0, 0);}
-          10% { transform: translate(-8px, 0);}
-          20% { transform: translate(8px, 0);}
-          30% { transform: translate(-8px, 0);}
-          40% { transform: translate(8px, 0);}
-          50% { transform: translate(-8px, 0);}
-          60% { transform: translate(8px, 0);}
-          70% { transform: translate(-8px, 0);}
-          80% { transform: translate(8px, 0);}
-          90% { transform: translate(-8px, 0);}
-          100% { transform: translate(0, 0);}
-        }
-        .poem-shake {
-          animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-        }
-      `}</style>
+      
     </div>
   );
 }

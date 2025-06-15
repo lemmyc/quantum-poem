@@ -1,0 +1,33 @@
+.poem-stats-panel {
+  position: absolute;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  min-width: 320px;
+  max-width: 700px;
+  background: rgba(10, 20, 30, 0.92);
+  border: 2px solid #00ffe5;
+  border-radius: 14px;
+  box-shadow: 0 0 32px #00ffe5, 0 0 8px #00ffe5 inset;
+  padding: 32px 36px;
+  color: #00ffe5;
+  font-size: 1.5rem;
+  letter-spacing: 1.2px;
+  text-align: center;
+  z-index: 1001;
+  animation: panel-glow 2.5s infinite alternate;
+  line-height: 1.7;
+  word-break: break-word;
+  text-shadow: 0 0 5px #00ffe5, 0 0 10px #ff00ff;
+
+  .word {
+    display: inline-block;
+    margin-right: 0.3em;
+    transition: color 0.2s ease;
+    cursor: pointer;
+
+    &:hover {
+      color: #FFA500;
+    }
+  }
+}
