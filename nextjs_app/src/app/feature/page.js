@@ -1,43 +1,60 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import dynamic from 'next/dynamic';
+import { useEffect, useState, useRef, Suspense } from 'react';
+import SunModel from '../../components/SunModel/SunModel';
+import './page.scss';
+import HackerStatsPanel from '../../components/HackerStatsPanel';
+import PoemDisplay from '../../components/PoemAnimation/poemDisplay';
 
-const ElectronOrbit = dynamic(() => import('@/components/ElectronOrbit'), {
-  ssr: false,
-  loading: () => <div style={{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center'}}>Loading 3D...</div>
-});
-
-export default function FeaturePage() {
+function FeatureContent() {
   const searchParams = useSearchParams();
-  const word = searchParams.get('word');
+  const mainWord = searchParams.get('word');
   const language = searchParams.get('language');
   const [keywords, setKeywords] = useState(null);
-  const [poem, setPoem] = useState('');
-  const [poemDisplay, setPoemDisplay] = useState('');
+  const [poem, setPoem] = useState({ text: '', animate: false }); // Bài thơ chính: text và trạng thái animate
+  const [hoveredWordIdx, setHoveredWordIdx] = useState(null); // Cho bài thơ chính
+  const [sphereToCorner, setSphereToCorner] = useState(false);
+  const poemBoxRef = useRef();
+  const [extraPoems, setExtraPoems] = useState([]); // mỗi phần tử: {text, animate}
+  const [hoveredExtraPoemWord, setHoveredExtraPoemWord] = useState({ poemIdx: null, wordIdx: null });
+  const [mainError, setMainError] = useState(null); // Define mainError state
+  const [pendingPoem, setPendingPoem] = useState(null);
+  const [fadeOut, setFadeOut] = useState(false);
 
-  // Hiệu ứng typing cho poem
-  useEffect(() => {
-    if (!poem) return;
-    setPoemDisplay('');
-    let i = 0;
-    const interval = setInterval(() => {
-      setPoemDisplay(poem.slice(0, i + 1));
-      i++;
-      if (i >= poem.length) clearInterval(interval);
-    }, 30);
-    return () => clearInterval(interval);
-  }, [poem]);
+  const handleGeneratePoemFromSunModel = async (subWord) => {
+    if (!mainWord) return;
+    try {
+      const res = await fetch('/api/generatePoem', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mainWord: mainWord,
+          subWord: subWord,
+          emotion: "sad",
+          language: "vietnamese"
+        }),
+      });
+      const data = await res.json();
+      const newPoemText = data.poem || 'Không thể tạo bài thơ mới';
+      setExtraPoems([{ text: newPoemText, animate: false }]);
+      setTimeout(() => {
+        setExtraPoems([{ text: newPoemText, animate: true }]);
+      }, 30);
+    } catch (e) {
+      console.error('Error generating poem from SunModel:', e);
+      setExtraPoems([{ text: 'Lỗi khi tạo bài thơ mới!', animate: true }]);
+    }
+  };
 
   useEffect(() => {
     async function fetchKeywords() {
-      if (!word) return;
+      if (!mainWord) return;
       try {
         const keywordsResponse = await fetch('/api/generateKeywords', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ inputText: word, emotion: 'happy' }),
+          body: JSON.stringify({ inputText: mainWord, emotion: 'happy' }),
         });
         const tenWords = await keywordsResponse.json();
 
@@ -61,49 +78,74 @@ export default function FeaturePage() {
             setMainError("Could not determine relevant keywords from the generated list. Please try again.");
             return;
         }
-        setKeywords(newSortedWords)
+
+        setKeywords(newSortedWords);
         console.log('Keywords API result:', newSortedWords);
       } catch (err) {
         console.error('Error fetching keywords:', err);
+        setMainError('Error fetching keywords: ' + err.message);
       }
     }
     fetchKeywords();
-  }, [word]);
+  }, [mainWord]);
 
   return (
-    <div className="relative min-h-screen">
+    <div className="feature-container">
+      {/* Hacker-stats cyber panel góc phải */}
+      <HackerStatsPanel />
       {/* 3D Quantum Sphere background */}
-      <ElectronOrbit keywords={keywords} onPoem={setPoem} />
-      {/* Poem overlay góc trên phải */}
-      {poemDisplay && (
-        <div style={{
-          position: 'fixed',
-          top: 24,
-          right: 32,
-          minWidth: 320,
-          maxWidth: 480,
-          background: 'rgba(30,30,30,0.95)',
-          color: '#fff',
-          borderRadius: 12,
-          padding: '20px 28px',
-          fontSize: 20,
-          fontFamily: 'serif',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-          zIndex: 1000,
-          whiteSpace: 'pre-line',
-          letterSpacing: 0.5,
-          border: '1px solid #444',
-          animation: 'fadeIn 0.5s'
-        }}>
-          {poemDisplay}
-        </div>
+      {Array.isArray(keywords) && keywords.length > 0 ? (
+        <SunModel
+          mainWord={mainWord}
+          keywords={keywords}
+          onPoem={(newPoemText) => setPoem({ text: newPoemText, animate: false })} // Bài thơ chính không animation
+          sphereToCorner={sphereToCorner}
+          onGeneratePoemFromSunModel={handleGeneratePoemFromSunModel}
+        />
+      ) : (
+        <div>Loading...</div>
       )}
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(-20px);}
-          to { opacity: 1; transform: translateY(0);}
-        }
-      `}</style>
+    
+
+      {/* Hiển thị các bài thơ phụ */}
+      {extraPoems.map((poemItem, i) => (
+            <PoemDisplay 
+              text={poemItem.text} 
+              key={i}
+              onWordClick={async (word) => {
+                try {
+                  const res = await fetch('/api/generatePoem', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      mainWord: mainWord,
+                      subWord: word,
+                      emotion: "sad",
+                      language: "vietnamese"
+                    }),
+                  });
+                  const data = await res.json();
+                  const newPoemText = data.poem || 'Không thể tạo bài thơ mới';
+                  setExtraPoems([{ text: newPoemText, animate: false }]);
+                  setTimeout(() => {
+                    setExtraPoems([{ text: newPoemText, animate: true }]);
+                  }, 30);
+                } catch (e) {
+                  console.error('Error generating poem from word click:', e);
+                  setExtraPoems([{ text: 'Lỗi khi tạo bài thơ mới!', animate: true }]);
+                }
+              }}
+            />
+      ))}
+      
     </div>
   );
-} 
+}
+
+export default function FeaturePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <FeatureContent />
+    </Suspense>
+  );
+}

@@ -6,13 +6,49 @@
 
 .customModal {
     :global(.ant-modal-content) {
-        background: transparent;
-        box-shadow: none;
+        background: rgba(10, 20, 30, 0.95);
+        box-shadow: 0 0 20px #00ffe7aa;
+        border: 2px solid #00ffe7;
+        border-radius: 10px;
+        font-family: 'Share Tech Mono', 'Fira Mono', 'Consolas', monospace;
+        color: #00ffe7;
+        padding: 0;
+        position: relative;
+        animation: cyber-glow 2.2s ease-in-out infinite alternate;
+        overflow: hidden;
     }
-
     :global(.ant-modal-body) {
         padding: 0;
     }
+    :global(.ant-modal-content)::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; right: 0; bottom: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          to bottom,
+          transparent,
+          transparent 6px,
+          rgba(0,255,231,0.04) 7px,
+          transparent 8px
+        );
+        z-index: 1;
+    }
+}
+
+@keyframes cyber-glow {
+  0% {
+    box-shadow: 0 0 8px #00ffe7, 0 0 20px #00ffe7aa, 0 0 2px #00ffe7;
+    border-color: #00ffe7;
+  }
+  50% {
+    box-shadow: 0 0 32px #00ffe7, 0 0 64px #00ffe7cc, 0 0 8px #00ffe7;
+    border-color: #7fffd4;
+  }
+  100% {
+    box-shadow: 0 0 8px #00ffe7, 0 0 20px #00ffe7aa, 0 0 2px #00ffe7;
+    border-color: #00ffe7;
+  }
 }
 
 .modalContent {
@@ -21,31 +57,38 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    background: white;
-    padding: 16px 24px;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    background: transparent;
+    padding: 18px 24px 14px 24px;
+    border-radius: 10px;
+    position: relative;
+    z-index: 2;
 }
 
 .input {
     border: none;
     outline: none;
-    font-size: 16px;
+    font-size: 18px;
     width: 200px;
     padding: 8px 0;
+    background: transparent;
+    color: #fff;
+    font-family: 'Share Tech Mono', 'Fira Mono', 'Consolas', monospace;
+    text-shadow: 0 0 4px #00ffe7;
 
     &::placeholder {
-        color: #999;
+        color: #00ffe7;
+        opacity: 0.6;
     }
 }
 
 .arrowIcon {
-    font-size: 20px;
-    color: #666;
+    font-size: 22px;
+    color: #00ffe7;
     cursor: pointer;
-    transition: color 0.3s ease;
-
+    transition: color 0.3s ease, text-shadow 0.3s;
+    text-shadow: 0 0 8px #00ffe7;
     &:hover {
-        color: #1890ff;
+        color: #7fffd4;
+        text-shadow: 0 0 16px #7fffd4;
     }
 }

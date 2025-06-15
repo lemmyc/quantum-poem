@@ -1,4 +1,5 @@
 @import url("https://fonts.googleapis.com/css?family=Lato:400,400i,700");
+
 @font-face {
   font-family: "Dusseldot";
   src: url("https://s3-us-west-2.amazonaws.com/s.cdpn.io/108082/Dusseldot-variable-web.woff2")
@@ -10,46 +11,63 @@
 }
 
 .title_header {
+  text-align: center;
+  font-size: 36px;
+  perspective: 1000px;
+
   span {
-    font-size: 55px;
     font-family: "Dusseldot";
-    text-shadow: -5px 6px 13px rgba(150, 150, 150, 1);
-    color:#d94a3f;
-    text-align: center;
     font-weight: 250;
     display: inline-block;
-    margin: 0 2px;
+    margin: 0 3px;
+    font-size: 3rem;
+    color: #00ffff;
+
+    // Neon glow
+    text-shadow:
+      0 0 6px #00f0ff,
+      0 0 12px #00e0ff,
+      0 0 20px #00c0ff,
+      0 0 35px #0099ff;
+
+    transform-origin: center;
+    filter: brightness(1.3) drop-shadow(0 0 4px #00eaff);
+    animation: quantumFloat 12s ease-in-out infinite alternate;
+    will-change: transform, filter;
+    mix-blend-mode: screen;
   }
 }
 
-
-
 @for $i from 1 through 100 {
-  @keyframes pulse#{$i} {
-    0% {
-      font-variation-settings: "wdth" 50;
-    }
-    20% {
-      font-variation-settings: "wdth" 145;
-    }
-    30% {
-      font-variation-settings: "wdth" 155;
-    }
-    50% {
-      font-variation-settings: "wdth" 250;
-    }
-    70% {
-      font-variation-settings: "wdth" 155;
-    }
-    80% {
-      font-variation-settings: "wdth" 145;
-    }
-    100% {
-      font-variation-settings: "wdth" 50;
-    }
-  }
-
   .ch#{$i} {
-    animation: pulse#{$i} 10s linear infinite;
+    animation-delay: #{random() * 3}s;
+  }
+}
+
+@keyframes quantumFloat {
+  0% {
+    transform: translateY(0) rotateX(0deg) rotateY(0deg) scale(1);
+    font-variation-settings: "wdth" 70;
+    opacity: 1;
+  }
+  20% {
+    transform: translateY(-2px) rotateX(5deg) rotateY(-5deg) scale(1.03);
+    font-variation-settings: "wdth" 130;
+  }
+  40% {
+    transform: translateY(3px) rotateX(-4deg) rotateY(6deg) scale(0.98);
+    font-variation-settings: "wdth" 200;
+  }
+  60% {
+    transform: translateY(-1px) rotateX(3deg) rotateY(-4deg) scale(1.02);
+    font-variation-settings: "wdth" 160;
+  }
+  80% {
+    transform: translateY(2px) rotateX(-2deg) rotateY(3deg) scale(1.01);
+    font-variation-settings: "wdth" 110;
+  }
+  100% {
+    transform: translateY(0) rotateX(0deg) rotateY(0deg) scale(1);
+    font-variation-settings: "wdth" 70;
   }
 }
