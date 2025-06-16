@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import styles from './PoemDisplay.module.scss';
+import styles from './poemDisplay.module.scss';
 
 const PoemDisplay = ({ text, onWordClick }) => {
   const [disperseData, setDisperseData] = useState([]);
@@ -8,41 +8,41 @@ const PoemDisplay = ({ text, onWordClick }) => {
   const lastUpdateRef = useRef(0);
   const startTimeRef = useRef(0);
 
-  // Khởi tạo tất cả ký tự với vị trí ngẫu nhiên khi text thay đổi
+  // Khởi tạo ký tự với vị trí ngẫu nhiên, bắt đầu phân rã ngay
   useEffect(() => {
     const initialData = text.split('').map((char, idx) => ({
       char,
-      x: ((Math.random() * window.innerWidth - window.innerWidth / 2) * 0.5).toFixed(2),
-      y: ((Math.random() * window.innerHeight - window.innerHeight / 2) * 0.5).toFixed(2),
+      x: ((Math.random() * window.innerWidth - window.innerWidth / 2) * 0.6).toFixed(2), // Tăng biên độ
+      y: ((Math.random() * window.innerHeight - window.innerHeight / 2) * 0.6).toFixed(2),
       r: (Math.random() * 360 - 180).toFixed(2),
       phase: Math.random() * 2 * Math.PI,
-      scale: (Math.random() * 0.3 + 0.85).toFixed(2),
+      scale: (Math.random() * 0.5 + 0.8).toFixed(2), // Scale rộng hơn
       idx,
       wordIndex: text.slice(0, idx + 1).split(' ').length - 1,
       lineIndex: text.slice(0, idx + 1).split('\n').length - 1,
     }));
     setDisperseData(initialData);
-    setReassembled(false); // Bắt đầu phân rã ngay
+    setReassembled(false);
   }, [text]);
 
-  // Chuyển động phân rã
+  // Phân rã (3.5 giây) với chuyển động mạnh hơn
   useEffect(() => {
     if (!reassembled && disperseData.length > 0) {
       startTimeRef.current = performance.now();
       const animate = (currentTime) => {
         const elapsed = currentTime - startTimeRef.current;
         if (elapsed >= 3500) {
-          setReassembled(true);
+          setReassembled(true); // Hội tụ sau 3.5 giây
           return;
         }
         if (currentTime - lastUpdateRef.current >= 50) {
           setDisperseData((prev) =>
             prev.map((item) => {
               const time = currentTime / 1000;
-              const dx = (Math.random() * 30 - 15 + 20 * Math.sin(time + item.phase)).toFixed(2);
-              const dy = (Math.random() * 30 - 15 + 20 * Math.cos(time + item.phase)).toFixed(2);
-              const dr = (Math.random() * 20 - 10).toFixed(2);
-              const scale = (Math.random() * 0.3 + 0.85).toFixed(2);
+              const dx = (Math.random() * 40 - 20 + 30 * Math.sin(time + item.phase)).toFixed(2); // Sóng lớn hơn
+              const dy = (Math.random() * 40 - 20 + 30 * Math.cos(time + item.phase)).toFixed(2);
+              const dr = (Math.random() * 30 - 15).toFixed(2); // Góc xoay mạnh
+              const scale = (Math.random() * 0.5 + 0.8).toFixed(2);
               return {
                 ...item,
                 x: (parseFloat(item.x) + parseFloat(dx) * 0.3).toFixed(2),
@@ -141,9 +141,9 @@ const PoemDisplay = ({ text, onWordClick }) => {
                     ? `translate(0px, 0px) rotate(0deg) scale(1)`
                     : `translate(${item.x}px, ${item.y}px) rotate(${item.r}deg) scale(${item.scale})`,
                   transition: reassembled
-                    ? `transform 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) ${item.idx * 0.06}s, opacity 1.2s ease-in-out ${item.idx * 0.06}s, filter 1.2s ease-in-out ${item.idx * 0.06}s`
+                    ? `transform 2s cubic-bezier(0.68, -0.6, 0.2, 1.8) ${item.idx * 0.06}s, opacity 1.2s ease-in-out ${item.idx * 0.06}s, filter 1.2s ease-in-out ${item.idx * 0.06}s`
                     : "none",
-                  opacity: reassembled ? 1 : 0.8,
+                  opacity: reassembled ? 1 : 0.7,
                   display: "inline-block",
                 }}
               >
@@ -156,13 +156,14 @@ const PoemDisplay = ({ text, onWordClick }) => {
     ));
   };
 
-  const sparkles = Array.from({ length: 6 }, (_, i) => ({
+  // Tạo 8 hạt ánh sáng với đuôi sáng
+  const sparkles = Array.from({ length: 8 }, (_, i) => ({
     id: i,
     x: Math.random() * 100,
     y: Math.random() * 100,
-    dx: (Math.random() * 2 - 1) * 0.3,
-    dy: (Math.random() * 2 - 1) * 0.3,
-    delay: Math.random() * 5,
+    dx: (Math.random() * 2 - 1) * 0.4,
+    dy: (Math.random() * 2 - 1) * 0.4,
+    delay: Math.random() * 4,
   }));
 
   return (
