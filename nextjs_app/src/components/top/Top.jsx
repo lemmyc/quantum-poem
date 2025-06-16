@@ -92,7 +92,7 @@ const Top = () => {
             alt="3D Shape"
             className={styles.image}
             height="320"
-            src="./assets/3D_Shape.png"
+            src="./assets/3D_shape.png"
             width="320"
           />
         </section>
