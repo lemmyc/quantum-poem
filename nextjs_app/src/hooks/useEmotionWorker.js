@@ -86,7 +86,8 @@ export function useEmotionWorker() {
   }, []);
 
   // Detect face, crop, resize, grayscale, and send to worker
-  const captureAndClassify = useCallback(async (videoRef, canvasRef) => {
+  const captureAndClassify = useCallback(async (videoElement, canvasElement) => {
+    
     if (!modelReady) {
       const errorMsg = 'Model chưa sẵn sàng.';
       console.error(errorMsg);
@@ -94,7 +95,7 @@ export function useEmotionWorker() {
       return Promise.reject(errorMsg);
     }
     
-    if (!videoRef.current || !canvasRef.current) {
+    if (!videoElement || !canvasElement) {
       const errorMsg = 'Video hoặc canvas không sẵn sàng.';
       console.error(errorMsg);
       setError(errorMsg);
@@ -102,7 +103,7 @@ export function useEmotionWorker() {
     }
 
     // Check if video is ready
-    const video = videoRef.current;
+    const video = videoElement;
     if (!video.srcObject || video.srcObject.getVideoTracks().length === 0) {
       const errorMsg = 'Video stream không khả dụng.';
       console.error(errorMsg);
@@ -130,7 +131,7 @@ export function useEmotionWorker() {
     setScore(null);
 
     try {
-      const fullCanvas = canvasRef.current;
+      const fullCanvas = canvasElement;
       const fullCtx = fullCanvas.getContext('2d', { willReadFrequently: true });
       
       fullCanvas.width = video.videoWidth || 640;

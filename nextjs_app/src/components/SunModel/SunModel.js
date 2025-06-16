@@ -32,7 +32,7 @@ const createGlowTexture = () => {
   return new THREE.CanvasTexture(canvas);
 };
 
-const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGeneratePoemFromSunModel }) => {
+const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGeneratePoemFromSunModel, getLatestEmotion  }) => {
   const mountRef = useRef(null);
   let orbitGroup = null;
   const electronsRef = useRef([]);
@@ -61,10 +61,16 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
 
   const generateNewKeywords = useCallback(async () => {
     try {
+
+      let currentEmotion = 'happy';
+      if (typeof getLatestEmotion === 'function') {
+        currentEmotion = await getLatestEmotion('happy');
+      }
+
       const keywordsResponse = await fetch('/api/generateKeywords', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inputText: mainWord, emotion: 'happy' }),
+        body: JSON.stringify({ inputText: mainWord, emotion: currentEmotion  }),
       });
       const tenWords = await keywordsResponse.json();
 
@@ -113,7 +119,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
       console.error('Error generating new keywords:', err);
       return null;
     }
-  }, [mainWord]);
+  }, [mainWord, getLatestEmotion]);
 
   const fetchAndProcessProbabilities = useCallback(async () => {
     const currentElectronLabels = (Array.isArray(electronLabelsRef.current) && electronLabelsRef.current.length >= 3)

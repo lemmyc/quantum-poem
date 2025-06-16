@@ -217,6 +217,35 @@ async def search_texts(request: SearchRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"Search failed: {str(e)}")
 
+@app.get("/health")
+async def health_check():
+    """
+    Health check endpoint to verify if the search server is running properly
+    
+    Returns:
+        dict: Status of the search server
+    """
+    if not search_server:
+        return {
+            "status": "unhealthy",
+            "message": "Search server not initialized",
+            "search_server_status": "not_initialized"
+        }
+    
+    try:
+        
+        
+        return {
+            "status": "healthy",
+            "message": "Search server is running properly",
+            "search_server_status": "initialized"
+        }
+    except Exception as e:
+        return {
+            "status": "unhealthy",
+            "message": f"Search server error: {str(e)}",
+            "search_server_status": "error"
+        }
 
 if __name__ == "__main__":
     import uvicorn

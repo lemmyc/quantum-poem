@@ -32,3 +32,51 @@
 .feature-container {
   background-color: #000;
 }
+
+.video-capture-panel {
+  position: fixed;
+  bottom: 24px;
+  right: 32px;
+  width: 320px;
+  background: rgba(10, 20, 30, 0.95);
+  border: 2px solid #00ffe7;
+  border-radius: 10px;
+  box-shadow: 0 0 20px #00ffe7aa, inset 0 0 10px rgba(0, 255, 231, 0.2);
+  color: #00ffe7;
+  font-family: 'Share Tech Mono', 'Fira Mono', 'Consolas', monospace;
+  padding: 18px 24px 14px 24px;
+  z-index: 2000;
+  overflow: hidden;
+  animation: cyber-glow 2.2s ease-in-out infinite alternate;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.video-capture-panel:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 40px #00ffe7cc, inset 0 0 20px rgba(0, 255, 231, 0.4);
+}
+
+.video-capture-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1; 
+  background: radial-gradient(circle at center, rgba(0, 255, 231, 0.08), transparent 70%);
+  background-size: 40px 40px;
+  background-image: 
+    linear-gradient(to right, rgba(0, 255, 231, 0.07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 255, 231, 0.07) 1px, transparent 1px);
+  animation: grid-move 14s linear infinite;
+  pointer-events: none;
+}
+
+
+.video-capture-panel video {
+  width: 100%; 
+  height: auto;
+  display: block; 
+  margin-top: 12px; 
+  border-radius: 6px;
+  border: 1px solid rgba(0, 255, 231, 0.2); 
+  transform: scaleX(-1);
+}
