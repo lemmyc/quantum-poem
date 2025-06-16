@@ -192,6 +192,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
     targetScale.current = new THREE.Vector3(0.3, 0.3, 0.3);
 
     if (onGeneratePoemFromSunModel && highestProbWord) {
+      console.log(highestProbWord)
       onGeneratePoemFromSunModel(highestProbWord);
     }
     lastHighlightedWordRef.current = highestProbWord;

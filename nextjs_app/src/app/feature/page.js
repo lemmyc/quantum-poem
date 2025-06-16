@@ -20,29 +20,15 @@ function FeatureContent() {
   const [sphereToCorner, setSphereToCorner] = useState(false);
   const captureRef = useRef(null);
 
-  // 1. State to track if the 3D model is ready.
-  const [isModelReady, setIsModelReady] = useState(false);
-
   const {
     modelReady: emotionModelReady, // Renamed to avoid confusion
     captureAndClassify,
     setError: setEmotionError,
   } = useEmotionWorker();
 
-  // 2. Callback function to be passed to SunModel.
-  //    SunModel will call this function when it's fully loaded.
-  const handleModelReady = useCallback(() => {
-    console.log("SunModel has finished loading and is ready.");
-    setIsModelReady(true);
-  }, []); // Empty dependency array as setIsModelReady is stable
-
   const detectEmotion = useCallback(
     async (fallbackEmotion) => {
-      if (
-        captureRef.current &&
-        captureRef.current.video &&
-        emotionModelReady
-      ) {
+      if (captureRef.current && captureRef.current.video && emotionModelReady) {
         try {
           const emotionResult = await captureAndClassify(
             captureRef.current.video,
@@ -60,15 +46,9 @@ function FeatureContent() {
     [emotionModelReady, captureAndClassify]
   );
 
-  // This API call is for interaction, so we should guard it.
   const handleGeneratePoemFromSunModel = async (subWord) => {
-    // 3. Guard the API call. Only proceed if the model is ready.
-    if (!mainWord || !isModelReady) {
-        console.log("Model not ready, skipping API call for new poem.");
-        return;
-    }
     try {
-      const detectedEmotion = await detectEmotion("happy"); // Provide a fallback
+      const detectedEmotion = await detectEmotion("happy");
 
       const res = await fetch("/api/generatePoem", {
         method: "POST",
@@ -76,8 +56,7 @@ function FeatureContent() {
         body: JSON.stringify({
           mainWord: mainWord,
           subWord: subWord,
-          emotion: detectedEmotion,
-          language: "vietnamese",
+          emotion: detectedEmotion
         }),
       });
       const data = await res.json();
@@ -89,8 +68,6 @@ function FeatureContent() {
     }
   };
 
-  // This effect fetches initial data FOR the model, so it should run before.
-  // It does not need to be guarded by isModelReady.
   useEffect(() => {
     async function fetchKeywords() {
       if (!mainWord) return;
@@ -159,8 +136,6 @@ function FeatureContent() {
           sphereToCorner={sphereToCorner}
           onGeneratePoemFromSunModel={handleGeneratePoemFromSunModel}
           getLatestEmotion={detectEmotion}
-          // 4. Pass the callback function as a prop to the SunModel.
-          onReady={handleModelReady}
         />
       ) : (
         <div>Loading...</div>
@@ -171,11 +146,6 @@ function FeatureContent() {
           text={poemItem.text}
           key={i}
           onWordClick={async (word) => {
-            // Also good to guard this interactive API call.
-            if (!isModelReady) {
-                console.log("Model not ready, skipping API call from word click.");
-                return;
-            }
             try {
               const detectedEmotion = await detectEmotion("happy");
               const res = await fetch("/api/generatePoem", {
@@ -184,8 +154,7 @@ function FeatureContent() {
                 body: JSON.stringify({
                   mainWord: mainWord,
                   subWord: word,
-                  emotion: detectedEmotion,
-                  language: "vietnamese",
+                  emotion: detectedEmotion
                 }),
               });
               const data = await res.json();
