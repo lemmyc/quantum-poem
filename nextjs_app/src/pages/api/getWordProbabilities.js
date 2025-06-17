@@ -1,6 +1,6 @@
 // src/pages/api/getWordProbabilities.js
 import fetch from 'node-fetch'; // Required for making API calls in a Node.js environment
-const PYTHON_API_BASE_URL = process.env.PYTHON_API_URL || "http://localhost:8000";
+const PYTHON_API_BASE_URL = process.env.PYTHON_API_URL || "http://127.0.0.1:8000";
 const SHUFFLE_API_URL = PYTHON_API_BASE_URL + "/api/shuffle";
 
 export default async function handler(req, res) {
@@ -25,6 +25,7 @@ export default async function handler(req, res) {
                 },
                 body: JSON.stringify({ data: keywords }), 
             });
+            
 
             // Handle cases where the shuffle API returns an error
             if (!apiResponse.ok) {
