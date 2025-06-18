@@ -8,6 +8,7 @@ const PoemDisplay = ({ text, onWordClick }) => {
   const animationFrameId = useRef(null);
   const lastUpdateRef = useRef(0);
   const startTimeRef = useRef(0);
+  const [hoveredLineIndex, setHoveredLineIndex] = useState(null);
 
   const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
   const isLargePoem = wordCount > 50;
@@ -115,7 +116,7 @@ const PoemDisplay = ({ text, onWordClick }) => {
       if (item.char === '\n') {
         if (currentWord.length > 0) {
           currentLine.push({
-            word: currentWord.join(''),
+            word: currentWord.map(c => c.char).join(''),
             chars: currentWord,
             wordIndex: currentWordIndex++,
           });
@@ -126,7 +127,7 @@ const PoemDisplay = ({ text, onWordClick }) => {
       } else if (item.char === ' ') {
         if (currentWord.length > 0) {
           currentLine.push({
-            word: currentWord.join(''),
+            word: currentWord.map(c => c.char).join(''),
             chars: currentWord,
             wordIndex: currentWordIndex++,
           });
@@ -139,7 +140,7 @@ const PoemDisplay = ({ text, onWordClick }) => {
 
     if (currentWord.length > 0) {
       currentLine.push({
-        word: currentWord.join(''),
+        word: currentWord.map(c => c.char).join(''),
         chars: currentWord,
         wordIndex: currentWordIndex,
       });
@@ -149,16 +150,21 @@ const PoemDisplay = ({ text, onWordClick }) => {
     }
 
     return lines.map(({ line, lineIndex }) => (
-      <div key={lineIndex} className={styles.line}>
+      <div
+        key={lineIndex}
+        className={`${styles.line} ${hoveredLineIndex === lineIndex ? styles.highlight : ''}`}
+        onMouseEnter={() => setHoveredLineIndex(lineIndex)}
+        onMouseLeave={() => setHoveredLineIndex(null)}
+      >
         {line.map(({ word, chars, wordIndex }) => (
           <span
             key={`${lineIndex}-${wordIndex}`}
             className={styles.word}
-            onClick={() => handleWordClick(word)}
-            onKeyDown={(e) => e.key === 'Enter' && handleWordClick(word)}
+            onClick={() => handleWordClick(lines[lineIndex].line.map(w => w.word).join(' '))}
+            onKeyDown={(e) => e.key === 'Enter' && handleWordClick(lines[lineIndex].line.map(w => w.word).join(' '))}
             role="button"
             tabIndex={0}
-            aria-label={`Word: ${word}`}
+            aria-label={`Word: ${lines[lineIndex].line.map(w => w.word).join(' ')}`}
           >
             {chars.map((item, charIndex) => (
               <span
