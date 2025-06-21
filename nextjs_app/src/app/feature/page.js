@@ -8,6 +8,7 @@ import HackerStatsPanel from "../../components/HackerStatsPanel";
 import PoemDisplay from "../../components/PoemAnimation/poemDisplay";
 import VideoCapture from "../../components/VideoCapture";
 import { useEmotionWorker } from "../../hooks/useEmotionWorker";
+import GlowButton from "../../components/GlowButton/GlowButton";
 
 const emotionIcons = {
   sad: "😢",
@@ -19,6 +20,22 @@ const emotionIcons = {
   happy: "😊",
 };
 import NeonSwirlLoader from "../../components/NeonSwirlLoader/NeonSwirlLoader";
+
+// Helper function to retry API calls
+const retryApiCall = async (apiCall, maxRetries = 1) => {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await apiCall();
+    } catch (error) {
+      console.error(`API call attempt ${attempt + 1} failed:`, error);
+      if (attempt === maxRetries) {
+        throw error; // Re-throw the error if all retries failed
+      }
+      // Wait a bit before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+    }
+  }
+};
 
 function FeatureContent() {
   const searchParams = useSearchParams();
@@ -95,17 +112,25 @@ function FeatureContent() {
       setIsGeneratingPoem(true);
       const detectedEmotion = latestEmotionResult?.emotion || "happy";
 
-      const res = await fetch("/api/generatePoem", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mainWord: mainWord,
-          subWord: subWord,
-          emotion: detectedEmotion,
-        }),
+      const result = await retryApiCall(async () => {
+        const res = await fetch("/api/generatePoem", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mainWord: mainWord,
+            subWord: subWord,
+            emotion: detectedEmotion,
+          }),
+        });
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
+        return await res.json();
       });
-      const data = await res.json();
-      const newPoemText = data.poem || "Could not generate new poem";
+
+      const newPoemText = result.poem || "Could not generate new poem";
       setExtraPoems([{ text: newPoemText, animate: true }]);
     } catch (e) {
       console.error("Error generating poem from SunModel:", e);
@@ -164,6 +189,11 @@ function FeatureContent() {
 
   return (
     <div className="feature-container">
+      {/* GlowButton positioned in top-left corner */}
+      <div className="glow-button-container">
+        <GlowButton text="←" />
+      </div>
+
       <div className="video-capture-panel">
         <div className="panel-title">
           📹 REAL-TIME FEED{" "}
@@ -203,17 +233,26 @@ function FeatureContent() {
             try {
               setIsGeneratingPoem(true);
               const detectedEmotion = latestEmotionResult?.emotion || "happy";
-              const res = await fetch("/api/generatePoem", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  mainWord: mainWord,
-                  subWord: word,
-                  emotion: detectedEmotion,
-                }),
+              
+              const result = await retryApiCall(async () => {
+                const res = await fetch("/api/generatePoem", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    mainWord: mainWord,
+                    subWord: word,
+                    emotion: detectedEmotion,
+                  }),
+                });
+                
+                if (!res.ok) {
+                  throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                
+                return await res.json();
               });
-              const data = await res.json();
-              const newPoemText = data.poem || "Could not generate new poem";
+
+              const newPoemText = result.poem || "Could not generate new poem";
               setExtraPoems([{ text: newPoemText, animate: true }]);
             } catch (e) {
               console.error("Error generating poem from word click:", e);
