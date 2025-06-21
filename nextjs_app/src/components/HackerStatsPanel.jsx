@@ -78,10 +78,6 @@ export default function HackerStatsPanel() {
             <div className="value typing">{weatherData ? `${weatherData.temp}°C` : 'N/A'}</div>
           </div>
           <div className="panel-row">
-            <div className="label">💧 Humidity: </div>
-            <div className="value typing">{weatherData ? `${weatherData.humidity}%` : 'N/A'}</div>
-          </div>
-          <div className="panel-row">
             <div className="label">☁️ Status: </div>
             <div className="value typing">
               {weatherData ? (
@@ -91,10 +87,7 @@ export default function HackerStatsPanel() {
               ) : 'N/A'}
             </div>
           </div>
-          <div className="panel-row">
-            <div className="label">💨 Wind: </div>
-            <div className="value typing">{weatherData ? `${weatherData.windSpeed} m/s` : 'N/A'}</div>
-          </div>
+         
         </>
       )}
     </div>
