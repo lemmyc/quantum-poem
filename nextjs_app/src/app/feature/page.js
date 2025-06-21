@@ -1,13 +1,23 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useState, useRef, Suspense, useCallback } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import SunModel from "../../components/SunModel/SunModel";
 import "./page.scss";
 import HackerStatsPanel from "../../components/HackerStatsPanel";
 import PoemDisplay from "../../components/PoemAnimation/poemDisplay";
 import VideoCapture from "../../components/VideoCapture";
 import { useEmotionWorker } from "../../hooks/useEmotionWorker";
+
+const emotionIcons = {
+  sad: "😢",
+  disgust: "🤢",
+  angry: "😠",
+  neutral: "😐",
+  fear: "😨",
+  surprise: "😮",
+  happy: "😊",
+};
 
 function FeatureContent() {
   const searchParams = useSearchParams();
@@ -20,35 +30,67 @@ function FeatureContent() {
   const [sphereToCorner, setSphereToCorner] = useState(false);
   const captureRef = useRef(null);
 
+  const [latestEmotionResult, setLatestEmotionResult] = useState(null);
+
+  const [dominantEmotion, setDominantEmotion] = useState(null);
+  const [emotionStatus, setEmotionStatus] = useState("Loading model...");
+
   const {
-    modelReady: emotionModelReady, // Renamed to avoid confusion
+    modelReady: emotionModelReady,
     captureAndClassify,
     setError: setEmotionError,
   } = useEmotionWorker();
 
-  const detectEmotion = useCallback(
-    async (fallbackEmotion) => {
-      if (captureRef.current && captureRef.current.video && emotionModelReady) {
-        try {
-          const emotionResult = await captureAndClassify(
-            captureRef.current.video,
-            captureRef.current.canvas
-          );
-          if (emotionResult && emotionResult.emotion) {
-            return emotionResult.emotion;
-          }
-        } catch (error) {
-          console.error("Error detecting emotion:", error);
-        }
+  // Central emotion processing loop
+  useEffect(() => {
+    if (!emotionModelReady || !captureRef.current?.video) {
+      if (!emotionModelReady) {
+        setEmotionStatus("Loading model...");
+      } else {
+        setEmotionStatus("Initializing camera...");
       }
-      return fallbackEmotion;
-    },
-    [emotionModelReady, captureAndClassify]
-  );
+      return;
+    }
+
+    setEmotionStatus("Detecting...");
+
+    const intervalId = setInterval(async () => {
+      if (!captureRef.current?.video) return;
+      try {
+        const result = await captureAndClassify(
+          captureRef.current.video,
+          captureRef.current.canvas
+        );
+        // --- IMPORTANT CHANGE 1 ---
+        // Check if `result` exists and has an `emotion` property.
+        if (result && result.emotion) {
+          setLatestEmotionResult(result);
+        }
+      } catch (err) {
+        console.error("Error in central emotion detection loop:", err);
+        setEmotionError("Failed to detect emotion.");
+      }
+    }, 2000);
+
+    return () => clearInterval(intervalId);
+  }, [emotionModelReady, captureAndClassify, setEmotionError]);
+
+  useEffect(() => {
+    if (!latestEmotionResult) return;
+
+    if (latestEmotionResult.emotion && latestEmotionResult.score) {
+      setDominantEmotion({
+        label: latestEmotionResult.emotion,
+        score: parseFloat(latestEmotionResult.score),
+        icon: emotionIcons[latestEmotionResult.emotion] || "❓",
+      });
+    }
+  }, [latestEmotionResult]);
 
   const handleGeneratePoemFromSunModel = async (subWord) => {
     try {
-      const detectedEmotion = await detectEmotion("happy");
+      // Use emotion from central state
+      const detectedEmotion = latestEmotionResult?.emotion || "happy";
 
       const res = await fetch("/api/generatePoem", {
         method: "POST",
@@ -56,7 +98,7 @@ function FeatureContent() {
         body: JSON.stringify({
           mainWord: mainWord,
           subWord: subWord,
-          emotion: detectedEmotion
+          emotion: detectedEmotion,
         }),
       });
       const data = await res.json();
@@ -69,11 +111,12 @@ function FeatureContent() {
   };
 
   useEffect(() => {
-    async function fetchKeywords() {
-      if (!mainWord) return;
-      try {
-        const detectedEmotion = await detectEmotion("happy"); // Provide a fallback
+    if (!mainWord || !latestEmotionResult) return;
+    if (keywords !== null) return;
 
+    async function fetchKeywords() {
+      try {
+        const detectedEmotion = latestEmotionResult.emotion;
         const keywordsResponse = await fetch("/api/generateKeywords", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -83,7 +126,6 @@ function FeatureContent() {
           }),
         });
         const tenWords = await keywordsResponse.json();
-
         const probResponse = await fetch("/api/getWordProbabilities", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -96,19 +138,16 @@ function FeatureContent() {
           );
         }
         const probData = await probResponse.json();
-
         const newSortedWords = (probData.results || [])
           .sort((a, b) => b.probability - a.probability)
           .slice(0, 4)
           .map((item) => ({ word: item.word, probability: item.probability }));
-
         if (newSortedWords.length === 0) {
           setMainError(
             "Could not determine relevant keywords. Please try again."
           );
           return;
         }
-
         setKeywords(newSortedWords);
       } catch (err) {
         console.error("Error fetching keywords:", err);
@@ -116,14 +155,24 @@ function FeatureContent() {
       }
     }
     fetchKeywords();
-  }, [mainWord, detectEmotion]);
+  }, [mainWord, latestEmotionResult, keywords]);
 
   return (
     <div className="feature-container">
       <div className="video-capture-panel">
-        <div className="panel-title">📹 REAL-TIME FEED</div>
+        <div className="panel-title">
+          📹 REAL-TIME FEED{" "}
+          <span className="emotion-icon">{dominantEmotion?.icon}</span>
+        </div>
+
         <div className="panel-divider" />
         <VideoCapture ref={captureRef} onError={setEmotionError} />
+
+        {!dominantEmotion ? (
+          <p className="detecting-text">{emotionStatus}</p>
+        ) : (
+          <></>
+        )}
       </div>
       <HackerStatsPanel />
       {Array.isArray(keywords) && keywords.length > 0 ? (
@@ -135,7 +184,7 @@ function FeatureContent() {
           }
           sphereToCorner={sphereToCorner}
           onGeneratePoemFromSunModel={handleGeneratePoemFromSunModel}
-          getLatestEmotion={detectEmotion}
+          latestEmotionResult={latestEmotionResult}
         />
       ) : (
         <div>Loading...</div>
@@ -147,14 +196,14 @@ function FeatureContent() {
           key={i}
           onWordClick={async (word) => {
             try {
-              const detectedEmotion = await detectEmotion("happy");
+              const detectedEmotion = latestEmotionResult?.emotion || "happy";
               const res = await fetch("/api/generatePoem", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                   mainWord: mainWord,
                   subWord: word,
-                  emotion: detectedEmotion
+                  emotion: detectedEmotion,
                 }),
               });
               const data = await res.json();
