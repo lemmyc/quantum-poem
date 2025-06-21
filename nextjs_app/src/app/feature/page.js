@@ -8,6 +8,7 @@ import HackerStatsPanel from "../../components/HackerStatsPanel";
 import PoemDisplay from "../../components/PoemAnimation/poemDisplay";
 import VideoCapture from "../../components/VideoCapture";
 import { useEmotionWorker } from "../../hooks/useEmotionWorker";
+import NeonSwirlLoader from "../../components/NeonSwirlLoader/NeonSwirlLoader";
 
 function FeatureContent() {
   const searchParams = useSearchParams();
@@ -18,6 +19,7 @@ function FeatureContent() {
   const [extraPoems, setExtraPoems] = useState([]);
   const [mainError, setMainError] = useState(null);
   const [sphereToCorner, setSphereToCorner] = useState(false);
+  const [isGeneratingPoem, setIsGeneratingPoem] = useState(false);
   const captureRef = useRef(null);
 
   const {
@@ -48,6 +50,7 @@ function FeatureContent() {
 
   const handleGeneratePoemFromSunModel = async (subWord) => {
     try {
+      setIsGeneratingPoem(true);
       const detectedEmotion = await detectEmotion("happy");
 
       const res = await fetch("/api/generatePoem", {
@@ -65,6 +68,8 @@ function FeatureContent() {
     } catch (e) {
       console.error("Error generating poem from SunModel:", e);
       setExtraPoems([{ text: "Error generating new poem!", animate: true }]);
+    } finally {
+      setIsGeneratingPoem(false);
     }
   };
 
@@ -99,7 +104,7 @@ function FeatureContent() {
 
         const newSortedWords = (probData.results || [])
           .sort((a, b) => b.probability - a.probability)
-          .slice(0, 4)
+          .slice(0, 5)
           .map((item) => ({ word: item.word, probability: item.probability }));
 
         if (newSortedWords.length === 0) {
@@ -138,7 +143,7 @@ function FeatureContent() {
           getLatestEmotion={detectEmotion}
         />
       ) : (
-        <div>Loading...</div>
+        <NeonSwirlLoader />
       )}
 
       {extraPoems.map((poemItem, i) => (
@@ -147,6 +152,7 @@ function FeatureContent() {
           key={i}
           onWordClick={async (word) => {
             try {
+              setIsGeneratingPoem(true);
               const detectedEmotion = await detectEmotion("happy");
               const res = await fetch("/api/generatePoem", {
                 method: "POST",
@@ -165,17 +171,21 @@ function FeatureContent() {
               setExtraPoems([
                 { text: "Error generating new poem!", animate: true },
               ]);
+            } finally {
+              setIsGeneratingPoem(false);
             }
           }}
         />
       ))}
+
+      {isGeneratingPoem && <NeonSwirlLoader />}
     </div>
   );
 }
 
 export default function FeaturePage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<NeonSwirlLoader />}>
       <FeatureContent />
     </Suspense>
   );
