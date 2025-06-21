@@ -49,6 +49,47 @@
   overflow: hidden;
   animation: cyber-glow 2.2s ease-in-out infinite alternate;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  .current-emotion-panel {
+    padding: 10px 15px;
+    border-top: 1px solid #444; // Phân cách với video
+    
+    .panel-subtitle {
+      font-size: 0.8rem;
+      color: #9ca3af; 
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+    }
+
+    .emotion-icons-container {
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      min-height: 40px; // Đảm bảo chiều cao ổn định
+    }
+
+    .emotion-icon-wrapper {
+      transition: transform 0.2s ease-in-out;
+      display: flex;
+
+      &:hover {
+        transform: scale(1.2); // Phóng to icon khi hover
+      }
+    }
+
+    .emotion-icon {
+      font-size: 2rem; // Kích thước icon
+      cursor: default;
+    }
+
+    .detecting-text {
+      font-family: 'Courier New', Courier, monospace;
+      font-style: italic;
+      color: #6b7280; // text-gray-500
+    }
+  }
+
 }
 
 .video-capture-panel:hover {
