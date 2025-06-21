@@ -8,6 +8,7 @@ import HackerStatsPanel from "../../components/HackerStatsPanel";
 import PoemDisplay from "../../components/PoemAnimation/poemDisplay";
 import VideoCapture from "../../components/VideoCapture";
 import { useEmotionWorker } from "../../hooks/useEmotionWorker";
+import GlowButton from "../../components/GlowButton/GlowButton";
 
 const emotionIcons = {
   sad: "😢",
@@ -17,6 +18,23 @@ const emotionIcons = {
   fear: "😨",
   surprise: "😮",
   happy: "😊",
+};
+import NeonSwirlLoader from "../../components/NeonSwirlLoader/NeonSwirlLoader";
+
+// Helper function to retry API calls
+const retryApiCall = async (apiCall, maxRetries = 1) => {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await apiCall();
+    } catch (error) {
+      console.error(`API call attempt ${attempt + 1} failed:`, error);
+      if (attempt === maxRetries) {
+        throw error; // Re-throw the error if all retries failed
+      }
+      // Wait a bit before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+    }
+  }
 };
 
 function FeatureContent() {
@@ -28,6 +46,7 @@ function FeatureContent() {
   const [extraPoems, setExtraPoems] = useState([]);
   const [mainError, setMainError] = useState(null);
   const [sphereToCorner, setSphereToCorner] = useState(false);
+  const [isGeneratingPoem, setIsGeneratingPoem] = useState(false);
   const captureRef = useRef(null);
 
   const [latestEmotionResult, setLatestEmotionResult] = useState(null);
@@ -90,23 +109,34 @@ function FeatureContent() {
   const handleGeneratePoemFromSunModel = async (subWord) => {
     try {
       // Use emotion from central state
+      setIsGeneratingPoem(true);
       const detectedEmotion = latestEmotionResult?.emotion || "happy";
 
-      const res = await fetch("/api/generatePoem", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mainWord: mainWord,
-          subWord: subWord,
-          emotion: detectedEmotion,
-        }),
+      const result = await retryApiCall(async () => {
+        const res = await fetch("/api/generatePoem", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mainWord: mainWord,
+            subWord: subWord,
+            emotion: detectedEmotion,
+          }),
+        });
+        
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
+        return await res.json();
       });
-      const data = await res.json();
-      const newPoemText = data.poem || "Could not generate new poem";
+
+      const newPoemText = result.poem || "Could not generate new poem";
       setExtraPoems([{ text: newPoemText, animate: true }]);
     } catch (e) {
       console.error("Error generating poem from SunModel:", e);
       setExtraPoems([{ text: "Error generating new poem!", animate: true }]);
+    } finally {
+      setIsGeneratingPoem(false);
     }
   };
 
@@ -140,7 +170,7 @@ function FeatureContent() {
         const probData = await probResponse.json();
         const newSortedWords = (probData.results || [])
           .sort((a, b) => b.probability - a.probability)
-          .slice(0, 4)
+          .slice(0, 5)
           .map((item) => ({ word: item.word, probability: item.probability }));
         if (newSortedWords.length === 0) {
           setMainError(
@@ -159,6 +189,11 @@ function FeatureContent() {
 
   return (
     <div className="feature-container">
+      {/* GlowButton positioned in top-left corner */}
+      <div className="glow-button-container">
+        <GlowButton text="←" />
+      </div>
+
       <div className="video-capture-panel">
         <div className="panel-title">
           📹 REAL-TIME FEED{" "}
@@ -187,7 +222,7 @@ function FeatureContent() {
           latestEmotionResult={latestEmotionResult}
         />
       ) : (
-        <div>Loading...</div>
+        <NeonSwirlLoader />
       )}
 
       {extraPoems.map((poemItem, i) => (
@@ -196,35 +231,49 @@ function FeatureContent() {
           key={i}
           onWordClick={async (word) => {
             try {
+              setIsGeneratingPoem(true);
               const detectedEmotion = latestEmotionResult?.emotion || "happy";
-              const res = await fetch("/api/generatePoem", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  mainWord: mainWord,
-                  subWord: word,
-                  emotion: detectedEmotion,
-                }),
+              
+              const result = await retryApiCall(async () => {
+                const res = await fetch("/api/generatePoem", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    mainWord: mainWord,
+                    subWord: word,
+                    emotion: detectedEmotion,
+                  }),
+                });
+                
+                if (!res.ok) {
+                  throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                
+                return await res.json();
               });
-              const data = await res.json();
-              const newPoemText = data.poem || "Could not generate new poem";
+
+              const newPoemText = result.poem || "Could not generate new poem";
               setExtraPoems([{ text: newPoemText, animate: true }]);
             } catch (e) {
               console.error("Error generating poem from word click:", e);
               setExtraPoems([
                 { text: "Error generating new poem!", animate: true },
               ]);
+            } finally {
+              setIsGeneratingPoem(false);
             }
           }}
         />
       ))}
+
+      {isGeneratingPoem && <NeonSwirlLoader />}
     </div>
   );
 }
 
 export default function FeaturePage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<NeonSwirlLoader />}>
       <FeatureContent />
     </Suspense>
   );

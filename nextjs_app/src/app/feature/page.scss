@@ -31,6 +31,14 @@
 
 .feature-container {
   background-color: #000;
+  position: relative;
+}
+
+.glow-button-container {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 3000;
 }
 
 .video-capture-panel {

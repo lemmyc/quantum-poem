@@ -84,7 +84,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
 
       const newSortedWords = (probData.results || [])
         .sort((a, b) => b.probability - a.probability)
-        .slice(0, 3)
+        .slice(0, 5)
         .map(item => ({ word: item.word, probability: item.probability }));
 
       if (newSortedWords.length === 0) {
@@ -94,7 +94,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
       setElectronLabels(newSortedWords);
       
       electronsRef.current.forEach((electron, index) => {
-        if (electron.mesh.children[0]) {
+        if (electron.mesh.children[0] && index < 5) {
           const canvas = document.createElement('canvas');
           canvas.width = 256;
           canvas.height = 64;
@@ -119,7 +119,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
   }, [mainWord, latestEmotionResult]);
 
   const fetchAndProcessProbabilities = useCallback(async () => {
-    const currentElectronLabels = (Array.isArray(electronLabelsRef.current) && electronLabelsRef.current.length >= 3)
+    const currentElectronLabels = (Array.isArray(electronLabelsRef.current) && electronLabelsRef.current.length >= 5)
       ? electronLabelsRef.current.map(k => k.word || k)
       : [];
     const currentElectrons = electronsRef.current;
@@ -130,7 +130,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
     }
 
     try {
-      const electronTexts = currentElectronLabels.slice(0, 3);
+      const electronTexts = currentElectronLabels.slice(0, 5);
       console.log('Sending to API:', electronTexts);
       const response = await fetch('/api/getWordProbabilities', {
         method: 'POST',
@@ -159,7 +159,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
 
           if (indexToHighlight !== -1 && currentElectrons[indexToHighlight]) {
             electronToHighlightRef.current = currentElectrons[indexToHighlight];
-            setConfirmModalText(`Text phù hợp với cảm xúc của bạn là ${wordToHighlight}`);
+            setConfirmModalText(`Text that matches your emotion is <span style="color: #FF8C00; font-weight: bold; text-shadow: 0 0 10px rgba(255, 140, 0, 0.5);">${wordToHighlight}</span>`);
             setTimeout(() => {
                 setShowConfirmModal(true);
             }, 5000);
@@ -295,7 +295,9 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           : [
               'Electron 1',
               'Electron 2',
-              'Electron 3'
+              'Electron 3',
+              'Electron 4',
+              'Electron 5'
             ];
         const electronColor = '#00eaff';
         const highlightColor = new THREE.Color(0xFFA500);
@@ -306,6 +308,8 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           { x: 0, y: Math.PI / 7, z: Math.PI / 4 },
           { x: (Math.PI / 4), y: 0, z: (2 * Math.PI / 3)  }
         ];
+        
+        let electronCounter = 0;
         for (let i = 0; i < NUM_ORBITS; i++) {
           const { x, y, z } = orbitConfigs[i];
           const baseRadius = orbitRadius;
@@ -348,8 +352,12 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           glowOrbit3.rotation.set(x, y, z); glowOrbit3.renderOrder = 4;
           orbitGroup.add(glowOrbit3);
 
-          const numElectronsOnOrbit = 1;
-          for (let j = 0; j < numElectronsOnOrbit; j++) {
+          // Phân bổ electron: quỹ đạo 1 có 2 electron, quỹ đạo 2 có 2 electron, quỹ đạo 3 có 1 electron
+          const electronsOnThisOrbit = i < 2 ? 2 : 1;
+          
+          for (let j = 0; j < electronsOnThisOrbit; j++) {
+            if (electronCounter >= 5) break; // Giới hạn 5 electron
+            
             const electron = new THREE.Mesh(
               new THREE.SphereGeometry(maxDim * 0.14, 32, 32),
               new THREE.MeshStandardMaterial({
@@ -359,7 +367,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
             electron.castShadow = false; electron.receiveShadow = false;
             orbitGroup.add(electron);
 
-            const electronIndex = i;
+            const electronIndex = electronCounter;
             const canvas = document.createElement('canvas');
             canvas.width = 256; canvas.height = 64;
             const ctx = canvas.getContext('2d', { alpha: true });
@@ -374,9 +382,14 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
             textSprite.scale.set(maxDim * 0.6, maxDim * 0.15, 1);
             electron.add(textSprite);
 
+            // Offset để các electron trên cùng quỹ đạo không chồng lên nhau
+            const offset = (j / electronsOnThisOrbit) * Math.PI;
+
             electronsRef.current.push({
-              mesh: electron, orbitIdx: i, rotX: x, rotY: y, rotZ: z, offset: 0
+              mesh: electron, orbitIdx: i, rotX: x, rotY: y, rotZ: z, offset: offset
             });
+            
+            electronCounter++;
           }
         }
 
@@ -492,11 +505,11 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           closable={false}
           maskClosable={true}
           centered
-          title="Xác nhận"
+          title="Confirming"
           className={styles.customModal}
         >
           <div style={{ textAlign: 'center', padding: '20px' }}>
-            <p>{confirmModalText}</p>
+            <p dangerouslySetInnerHTML={{ __html: confirmModalText }}></p>
             <div style={{ marginTop: '20px' }}>
               <Button onClick={handleConfirmCancel} style={{ marginRight: '10px' }}>Hủy</Button>
               <Button type="primary" onClick={handleConfirmOk}>OK</Button>

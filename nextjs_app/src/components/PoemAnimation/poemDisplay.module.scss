@@ -181,11 +181,6 @@
     margin-right: 0.3em;
     transition: color 0.2s ease, transform 0.3s ease;
     cursor: pointer;
-
-    &:hover {
-      color: #FFA500;
-      transform: scale(1.2);
-    }
   }
 
   .letter {
@@ -250,4 +245,11 @@
   &:hover {
     text-shadow: 0 0 20px #00ffe5, 0 0 40px #00ffe5, 0 0 80px #00ffe5;
   }
+}
+
+.highlight {
+  background: rgba(0, 255, 255, 0.18);
+  box-shadow: 0 0 16px 2px rgba(0,255,255,0.25);
+  border-radius: 8px;
+  transition: background 0.2s, box-shadow 0.2s;
 }
