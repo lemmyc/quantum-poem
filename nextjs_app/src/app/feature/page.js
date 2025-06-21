@@ -91,8 +91,9 @@ function FeatureContent() {
 
   const handleGeneratePoemFromSunModel = async (subWord) => {
     try {
+      // Use emotion from central state
       setIsGeneratingPoem(true);
-      const detectedEmotion = await detectEmotion("happy");
+      const detectedEmotion = latestEmotionResult?.emotion || "happy";
 
       const res = await fetch("/api/generatePoem", {
         method: "POST",
@@ -201,7 +202,7 @@ function FeatureContent() {
           onWordClick={async (word) => {
             try {
               setIsGeneratingPoem(true);
-              const detectedEmotion = await detectEmotion("happy");
+              const detectedEmotion = latestEmotionResult?.emotion || "happy";
               const res = await fetch("/api/generatePoem", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
