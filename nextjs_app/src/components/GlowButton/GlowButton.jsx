@@ -24,4 +24,4 @@ const GlowButton = ({ text = "←", onClick, className = "" }) => {
   );
 };
 
-export default GlowButton; 
+export default GlowButton;

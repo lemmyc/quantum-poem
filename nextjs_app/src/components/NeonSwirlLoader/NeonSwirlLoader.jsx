@@ -111,4 +111,4 @@ const NeonSwirlLoader = () => {
   );
 };
 
-export default NeonSwirlLoader; 
+export default NeonSwirlLoader;
