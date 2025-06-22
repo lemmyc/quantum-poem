@@ -36,7 +36,7 @@ const getBackgroundImage = (emotion, language = "vn") => {
   return `/assets/poem_bg/${langCode}_group${group}.jpg`;
 };
 
-export default function PoemPage() {
+function PoemClient() {
   const searchParams = useSearchParams();
   const [poem, setPoem] = useState(null);
   const [backgroundImage, setBackgroundImage] = useState("");
@@ -150,5 +150,16 @@ export default function PoemPage() {
 
       {renderContent()}
     </div>
+  );
+}
+
+// page.js là Server Component, chỉ render <Suspense><PoemClient /></Suspense>
+import { Suspense } from "react";
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <PoemClient />
+    </Suspense>
   );
 } 
