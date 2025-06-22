@@ -10,12 +10,13 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { Modal, Button } from 'antd';
 import styles from '../LanguageSelector/projects/style.module.scss';
 import './SunModel.scss';
+import { useSearchParams } from 'next/navigation';
 
 const createGlowTexture = () => {
   const size = 256;
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: true });
   const gradient = ctx.createRadialGradient(
     size / 2,
     size / 2,
@@ -54,6 +55,8 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const initialProbFetchDone = useRef(false);
   const electronLabelsRef = useRef([]);
+  const searchParams = useSearchParams();
+  const wordParam = searchParams.get('word');
 
   useEffect(() => {
     electronLabelsRef.current = electronLabels;
@@ -61,20 +64,18 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
 
   const generateNewKeywords = useCallback(async () => {
     try {
-
       const currentEmotion = latestEmotionResult?.emotion || "happy";
-
       const keywordsResponse = await fetch('/api/generateKeywords', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inputText: mainWord, emotion: currentEmotion  }),
+        body: JSON.stringify({ inputText: mainWord, emotion: currentEmotion }),
       });
       const tenWords = await keywordsResponse.json();
 
       const probResponse = await fetch('/api/getWordProbabilities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keywords: tenWords.keywords }),
+        body: JSON.stringify({ keywords: tenWords.keywords.filter(word => word !== wordParam) }),
       });
       if (!probResponse.ok) {
         const errorData = await probResponse.json();
@@ -84,7 +85,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
 
       const newSortedWords = (probData.results || [])
         .sort((a, b) => b.probability - a.probability)
-        .slice(0, 3)
+        .slice(0, 5)
         .map(item => ({ word: item.word, probability: item.probability }));
 
       if (newSortedWords.length === 0) {
@@ -92,9 +93,9 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
       }
 
       setElectronLabels(newSortedWords);
-      
       electronsRef.current.forEach((electron, index) => {
-        if (electron.mesh.children[0]) {
+        if (electron.isMainWord) return;
+        if (electron.mesh.children[0] && index < 5) {
           const canvas = document.createElement('canvas');
           canvas.width = 256;
           canvas.height = 64;
@@ -110,19 +111,18 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           electron.mesh.children[0].material.needsUpdate = true;
         }
       });
-
       return newSortedWords;
     } catch (err) {
       console.error('Error generating new keywords:', err);
       return null;
     }
-  }, [mainWord, latestEmotionResult]);
+  }, [mainWord, latestEmotionResult, wordParam]);
 
   const fetchAndProcessProbabilities = useCallback(async () => {
-    const currentElectronLabels = (Array.isArray(electronLabelsRef.current) && electronLabelsRef.current.length >= 3)
+    const currentElectronLabels = (Array.isArray(electronLabelsRef.current) && electronLabelsRef.current.length >= 5)
       ? electronLabelsRef.current.map(k => k.word || k)
       : [];
-    const currentElectrons = electronsRef.current;
+    const currentElectrons = electronsRef.current.filter(e => !e.isMainWord);
 
     if (currentElectronLabels.length === 0) {
       console.warn('Electron labels not available for fetching probabilities.');
@@ -130,7 +130,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
     }
 
     try {
-      const electronTexts = currentElectronLabels.slice(0, 3);
+      const electronTexts = currentElectronLabels.slice(0, 5);
       console.log('Sending to API:', electronTexts);
       const response = await fetch('/api/getWordProbabilities', {
         method: 'POST',
@@ -159,11 +159,10 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
 
           if (indexToHighlight !== -1 && currentElectrons[indexToHighlight]) {
             electronToHighlightRef.current = currentElectrons[indexToHighlight];
-            setConfirmModalText(`Text phù hợp với cảm xúc của bạn là ${wordToHighlight}`);
+            setConfirmModalText(`Text that matches your emotion is <span style="color: #FF8C00; font-weight: bold; text-shadow: 0 0 10px rgba(255, 140, 0, 0.5);">${wordToHighlight}</span>`);
             setTimeout(() => {
                 setShowConfirmModal(true);
             }, 5000);
-            
           }
         }
       }
@@ -171,7 +170,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
       console.error('Error calling API:', error);
       alert('Error calling API: ' + error.message);
     }
-  }, []);
+  }, [wordParam]);
 
   const handleConfirmOk = () => {
     if (electronToHighlightRef.current) {
@@ -295,7 +294,9 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           : [
               'Electron 1',
               'Electron 2',
-              'Electron 3'
+              'Electron 3',
+              'Electron 4',
+              'Electron 5'
             ];
         const electronColor = '#00eaff';
         const highlightColor = new THREE.Color(0xFFA500);
@@ -306,6 +307,10 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           { x: 0, y: Math.PI / 7, z: Math.PI / 4 },
           { x: (Math.PI / 4), y: 0, z: (2 * Math.PI / 3)  }
         ];
+        
+        // Phân bổ electron: mỗi orbit có 2 electron
+        const electronsOnThisOrbitArr = [2, 2, 2];
+        let electronCounter = 0;
         for (let i = 0; i < NUM_ORBITS; i++) {
           const { x, y, z } = orbitConfigs[i];
           const baseRadius = orbitRadius;
@@ -348,8 +353,49 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           glowOrbit3.rotation.set(x, y, z); glowOrbit3.renderOrder = 4;
           orbitGroup.add(glowOrbit3);
 
-          const numElectronsOnOrbit = 1;
-          for (let j = 0; j < numElectronsOnOrbit; j++) {
+          // Phân bổ electron: mỗi orbit có 2 electron
+          const electronsOnThisOrbit = electronsOnThisOrbitArr[i];
+          for (let j = 0; j < electronsOnThisOrbit; j++) {
+            // Nếu là orbit 1, j=1 và có wordParam thì electron này là electron đỏ
+            if (i === 0 && j === 1 && wordParam) {
+              // Electron đỏ (mainWord)
+              const electron = new THREE.Mesh(
+                new THREE.SphereGeometry(maxDim * 0.14, 32, 32),
+                new THREE.MeshStandardMaterial({
+                  color: '#ff2222', emissive: '#ff2222', emissiveIntensity: 2.5, transparent: false, opacity: 1
+                })
+              );
+              electron.castShadow = false; electron.receiveShadow = false;
+              orbitGroup.add(electron);
+
+              // Label cho electron đỏ
+              const canvas = document.createElement('canvas');
+              canvas.width = 256; canvas.height = 64;
+              const ctx = canvas.getContext('2d', { alpha: true });
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.font = 'bold 32px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+              ctx.lineWidth = 8;
+              ctx.strokeStyle = '#000';
+              ctx.strokeText(wordParam, 128, 32);
+              ctx.fillStyle = '#ff2222';
+              ctx.fillText(wordParam, 128, 32);
+              const textTexture = new THREE.CanvasTexture(canvas);
+              const textMaterial = new THREE.SpriteMaterial({ map: textTexture, transparent: true, depthTest: false, depthWrite: false });
+              const textSprite = new THREE.Sprite(textMaterial);
+              textSprite.position.set(0, maxDim * 0.28, 0);
+              textSprite.scale.set(maxDim * 0.6, maxDim * 0.15, 1);
+              electron.add(textSprite);
+
+              // Offset cho electron đỏ: đặt lệch so với electron còn lại trên orbit 1
+              const offset = Math.PI * 0.66;
+              electronsRef.current.push({
+                mesh: electron, orbitIdx: i, rotX: x, rotY: y, rotZ: z, offset,
+                isMainWord: true // Đánh dấu electron đỏ
+              });
+              continue;
+            }
+            // Các electron thường
+            if (electronCounter >= 5) break; // Chỉ tạo 5 electron thường
             const electron = new THREE.Mesh(
               new THREE.SphereGeometry(maxDim * 0.14, 32, 32),
               new THREE.MeshStandardMaterial({
@@ -359,7 +405,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
             electron.castShadow = false; electron.receiveShadow = false;
             orbitGroup.add(electron);
 
-            const electronIndex = i;
+            const electronIndex = electronCounter;
             const canvas = document.createElement('canvas');
             canvas.width = 256; canvas.height = 64;
             const ctx = canvas.getContext('2d', { alpha: true });
@@ -374,9 +420,13 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
             textSprite.scale.set(maxDim * 0.6, maxDim * 0.15, 1);
             electron.add(textSprite);
 
+            // Offset để các electron trên cùng quỹ đạo không chồng lên nhau
+            const offset = (j / electronsOnThisOrbit) * Math.PI;
             electronsRef.current.push({
-              mesh: electron, orbitIdx: i, rotX: x, rotY: y, rotZ: z, offset: 0
+              mesh: electron, orbitIdx: i, rotX: x, rotY: y, rotZ: z, offset,
+              isMainWord: false
             });
+            electronCounter++;
           }
         }
 
@@ -399,6 +449,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
       (error) => { console.error('An error happened:', error); }
     );
 
+    // Animate luôn được khai báo và gọi ở đây
     const animate = () => {
       requestAnimationFrame(animate);
       controls.update();
@@ -492,11 +543,11 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           closable={false}
           maskClosable={true}
           centered
-          title="Xác nhận"
+          title="Confirming"
           className={styles.customModal}
         >
           <div style={{ textAlign: 'center', padding: '20px' }}>
-            <p>{confirmModalText}</p>
+            <p dangerouslySetInnerHTML={{ __html: confirmModalText }}></p>
             <div style={{ marginTop: '20px' }}>
               <Button onClick={handleConfirmCancel} style={{ marginRight: '10px' }}>Hủy</Button>
               <Button type="primary" onClick={handleConfirmOk}>OK</Button>

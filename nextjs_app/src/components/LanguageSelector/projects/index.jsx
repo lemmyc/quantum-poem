@@ -94,7 +94,7 @@ export default function Projects() {
                     <input
                         type="text"
                         className={styles.input}
-                        placeholder="Input your word"
+                        placeholder="Input your topic"
                         value={inputValue}
                         onChange={handleInputChange}
                         autoFocus

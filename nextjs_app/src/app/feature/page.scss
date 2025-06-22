@@ -31,6 +31,14 @@
 
 .feature-container {
   background-color: #000;
+  position: relative;
+}
+
+.glow-button-container {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 3000;
 }
 
 .video-capture-panel {
@@ -120,4 +128,18 @@
   border-radius: 6px;
   border: 1px solid rgba(0, 255, 231, 0.2); 
   transform: scaleX(-1);
+}
+
+.poem-actions {
+  position: absolute;
+  top: 20px;
+  width: 100%;
+  
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  .poem-action-button {
+    font-size: 12px;
+  }
 }

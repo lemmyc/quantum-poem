@@ -2,14 +2,19 @@ import { pipeline, env } from '@xenova/transformers';
 
 // Set TensorFlow logging level
 env.TF_CPP_MIN_LOG_LEVEL = 1;
-env.allowLocalModels = false;
-env.useBrowserCache = false;
+// env.allowLocalModels = false;
+// env.useBrowserCache = false;
+env.allowLocalModels = true;
+env.useBrowserCache = true;
+env.modelsPath = '/models/';
+env.backends.onnx.wasm.wasmPaths = '/models/ort-wasm/';
 
 console.log(env);
 
 class MyEmotionDetectionPipeline {
     static task = 'image-classification';
-    static model = 'Xenova/facial_emotions_image_detection';
+    // static model = 'Xenova/facial_emotions_image_detection';
+    static model = 'facial_emotions_image_detection';
     static instance = null;
 
     static async getInstance(progress_callback = null) {
