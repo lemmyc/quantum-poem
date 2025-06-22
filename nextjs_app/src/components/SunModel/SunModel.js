@@ -10,12 +10,13 @@ import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPa
 import { Modal, Button } from 'antd';
 import styles from '../LanguageSelector/projects/style.module.scss';
 import './SunModel.scss';
+import { useSearchParams } from 'next/navigation';
 
 const createGlowTexture = () => {
   const size = 256;
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext('2d', { alpha: true });
   const gradient = ctx.createRadialGradient(
     size / 2,
     size / 2,
@@ -54,6 +55,8 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
   const [isModelLoaded, setIsModelLoaded] = useState(false);
   const initialProbFetchDone = useRef(false);
   const electronLabelsRef = useRef([]);
+  const searchParams = useSearchParams();
+  const wordParam = searchParams.get('word');
 
   useEffect(() => {
     electronLabelsRef.current = electronLabels;
@@ -61,20 +64,18 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
 
   const generateNewKeywords = useCallback(async () => {
     try {
-
       const currentEmotion = latestEmotionResult?.emotion || "happy";
-
       const keywordsResponse = await fetch('/api/generateKeywords', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ inputText: mainWord, emotion: currentEmotion  }),
+        body: JSON.stringify({ inputText: mainWord, emotion: currentEmotion }),
       });
       const tenWords = await keywordsResponse.json();
 
       const probResponse = await fetch('/api/getWordProbabilities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ keywords: tenWords.keywords }),
+        body: JSON.stringify({ keywords: tenWords.keywords.filter(word => word !== wordParam) }),
       });
       if (!probResponse.ok) {
         const errorData = await probResponse.json();
@@ -92,8 +93,8 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
       }
 
       setElectronLabels(newSortedWords);
-      
       electronsRef.current.forEach((electron, index) => {
+        if (electron.isMainWord) return;
         if (electron.mesh.children[0] && index < 5) {
           const canvas = document.createElement('canvas');
           canvas.width = 256;
@@ -110,19 +111,18 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           electron.mesh.children[0].material.needsUpdate = true;
         }
       });
-
       return newSortedWords;
     } catch (err) {
       console.error('Error generating new keywords:', err);
       return null;
     }
-  }, [mainWord, latestEmotionResult]);
+  }, [mainWord, latestEmotionResult, wordParam]);
 
   const fetchAndProcessProbabilities = useCallback(async () => {
     const currentElectronLabels = (Array.isArray(electronLabelsRef.current) && electronLabelsRef.current.length >= 5)
       ? electronLabelsRef.current.map(k => k.word || k)
       : [];
-    const currentElectrons = electronsRef.current;
+    const currentElectrons = electronsRef.current.filter(e => !e.isMainWord);
 
     if (currentElectronLabels.length === 0) {
       console.warn('Electron labels not available for fetching probabilities.');
@@ -163,7 +163,6 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
             setTimeout(() => {
                 setShowConfirmModal(true);
             }, 5000);
-            
           }
         }
       }
@@ -171,7 +170,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
       console.error('Error calling API:', error);
       alert('Error calling API: ' + error.message);
     }
-  }, []);
+  }, [wordParam]);
 
   const handleConfirmOk = () => {
     if (electronToHighlightRef.current) {
@@ -309,6 +308,8 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           { x: (Math.PI / 4), y: 0, z: (2 * Math.PI / 3)  }
         ];
         
+        // Phân bổ electron: mỗi orbit có 2 electron
+        const electronsOnThisOrbitArr = [2, 2, 2];
         let electronCounter = 0;
         for (let i = 0; i < NUM_ORBITS; i++) {
           const { x, y, z } = orbitConfigs[i];
@@ -352,12 +353,49 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           glowOrbit3.rotation.set(x, y, z); glowOrbit3.renderOrder = 4;
           orbitGroup.add(glowOrbit3);
 
-          // Phân bổ electron: quỹ đạo 1 có 2 electron, quỹ đạo 2 có 2 electron, quỹ đạo 3 có 1 electron
-          const electronsOnThisOrbit = i < 2 ? 2 : 1;
-          
+          // Phân bổ electron: mỗi orbit có 2 electron
+          const electronsOnThisOrbit = electronsOnThisOrbitArr[i];
           for (let j = 0; j < electronsOnThisOrbit; j++) {
-            if (electronCounter >= 5) break; // Giới hạn 5 electron
-            
+            // Nếu là orbit 1, j=1 và có wordParam thì electron này là electron đỏ
+            if (i === 0 && j === 1 && wordParam) {
+              // Electron đỏ (mainWord)
+              const electron = new THREE.Mesh(
+                new THREE.SphereGeometry(maxDim * 0.14, 32, 32),
+                new THREE.MeshStandardMaterial({
+                  color: '#ff2222', emissive: '#ff2222', emissiveIntensity: 2.5, transparent: false, opacity: 1
+                })
+              );
+              electron.castShadow = false; electron.receiveShadow = false;
+              orbitGroup.add(electron);
+
+              // Label cho electron đỏ
+              const canvas = document.createElement('canvas');
+              canvas.width = 256; canvas.height = 64;
+              const ctx = canvas.getContext('2d', { alpha: true });
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              ctx.font = 'bold 32px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+              ctx.lineWidth = 8;
+              ctx.strokeStyle = '#000';
+              ctx.strokeText(wordParam, 128, 32);
+              ctx.fillStyle = '#ff2222';
+              ctx.fillText(wordParam, 128, 32);
+              const textTexture = new THREE.CanvasTexture(canvas);
+              const textMaterial = new THREE.SpriteMaterial({ map: textTexture, transparent: true, depthTest: false, depthWrite: false });
+              const textSprite = new THREE.Sprite(textMaterial);
+              textSprite.position.set(0, maxDim * 0.28, 0);
+              textSprite.scale.set(maxDim * 0.6, maxDim * 0.15, 1);
+              electron.add(textSprite);
+
+              // Offset cho electron đỏ: đặt lệch so với electron còn lại trên orbit 1
+              const offset = Math.PI * 0.66;
+              electronsRef.current.push({
+                mesh: electron, orbitIdx: i, rotX: x, rotY: y, rotZ: z, offset,
+                isMainWord: true // Đánh dấu electron đỏ
+              });
+              continue;
+            }
+            // Các electron thường
+            if (electronCounter >= 5) break; // Chỉ tạo 5 electron thường
             const electron = new THREE.Mesh(
               new THREE.SphereGeometry(maxDim * 0.14, 32, 32),
               new THREE.MeshStandardMaterial({
@@ -384,11 +422,10 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
 
             // Offset để các electron trên cùng quỹ đạo không chồng lên nhau
             const offset = (j / electronsOnThisOrbit) * Math.PI;
-
             electronsRef.current.push({
-              mesh: electron, orbitIdx: i, rotX: x, rotY: y, rotZ: z, offset: offset
+              mesh: electron, orbitIdx: i, rotX: x, rotY: y, rotZ: z, offset,
+              isMainWord: false
             });
-            
             electronCounter++;
           }
         }
@@ -412,6 +449,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
       (error) => { console.error('An error happened:', error); }
     );
 
+    // Animate luôn được khai báo và gọi ở đây
     const animate = () => {
       requestAnimationFrame(animate);
       controls.update();

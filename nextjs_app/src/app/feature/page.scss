@@ -129,3 +129,17 @@
   border: 1px solid rgba(0, 255, 231, 0.2); 
   transform: scaleX(-1);
 }
+
+.poem-actions {
+  position: absolute;
+  top: 20px;
+  width: 100%;
+  
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+  .poem-action-button {
+    font-size: 12px;
+  }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState, useRef, Suspense } from "react";
 import SunModel from "../../components/SunModel/SunModel";
 import "./page.scss";
@@ -39,7 +39,9 @@ const retryApiCall = async (apiCall, maxRetries = 1) => {
 
 function FeatureContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const mainWord = searchParams.get("word");
+  const language = searchParams.get("language") || "en"; // Get language from URL
 
   const [keywords, setKeywords] = useState(null);
   const [poem, setPoem] = useState({ text: "", animate: false });
@@ -120,6 +122,7 @@ function FeatureContent() {
             mainWord: mainWord,
             subWord: subWord,
             emotion: detectedEmotion,
+            language: language, // Pass language to API
           }),
         });
         
@@ -187,6 +190,20 @@ function FeatureContent() {
     fetchKeywords();
   }, [mainWord, latestEmotionResult, keywords]);
 
+  const confirmAndNavigateToPoem = (poemText) => {
+    const detectedEmotion = latestEmotionResult?.emotion || "neutral";
+    const poemData = {
+      title: `Your poem about topic "${mainWord}"`,
+      content: poemText,
+    };
+    
+    const encodedPoem = encodeURIComponent(JSON.stringify(poemData));
+    const keywordsString = keywords?.map(k => k.word).join(',') || '';
+
+    const url = `/poem?poem=${encodedPoem}&language=${language}&emotion=${detectedEmotion}&keywords=${keywordsString}`;
+    router.push(url);
+  };
+
   return (
     <div className="feature-container">
       {/* GlowButton positioned in top-left corner */}
@@ -226,44 +243,53 @@ function FeatureContent() {
       )}
 
       {extraPoems.map((poemItem, i) => (
-        <PoemDisplay
-          text={poemItem.text}
-          key={i}
-          onWordClick={async (word) => {
-            try {
-              setIsGeneratingPoem(true);
-              const detectedEmotion = latestEmotionResult?.emotion || "happy";
-              
-              const result = await retryApiCall(async () => {
-                const res = await fetch("/api/generatePoem", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    mainWord: mainWord,
-                    subWord: word,
-                    emotion: detectedEmotion,
-                  }),
+        <div className="poem-display-container" key={i}>
+          <PoemDisplay
+            text={poemItem.text}
+            onWordClick={async (word) => {
+              try {
+                setIsGeneratingPoem(true);
+                const detectedEmotion = latestEmotionResult?.emotion || "happy";
+                
+                const result = await retryApiCall(async () => {
+                  const res = await fetch("/api/generatePoem", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      mainWord: mainWord,
+                      subWord: word,
+                      emotion: detectedEmotion,
+                      language: language,
+                    }),
+                  });
+                  
+                  if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                  }
+                  
+                  return await res.json();
                 });
-                
-                if (!res.ok) {
-                  throw new Error(`HTTP error! status: ${res.status}`);
-                }
-                
-                return await res.json();
-              });
 
-              const newPoemText = result.poem || "Could not generate new poem";
-              setExtraPoems([{ text: newPoemText, animate: true }]);
-            } catch (e) {
-              console.error("Error generating poem from word click:", e);
-              setExtraPoems([
-                { text: "Error generating new poem!", animate: true },
-              ]);
-            } finally {
-              setIsGeneratingPoem(false);
-            }
-          }}
-        />
+                const newPoemText = result.poem || "Could not generate new poem";
+                setExtraPoems([{ text: newPoemText, animate: true }]);
+              } catch (e) {
+                console.error("Error generating poem from word click:", e);
+                setExtraPoems([
+                  { text: "Error generating new poem!", animate: true },
+                ]);
+              } finally {
+                setIsGeneratingPoem(false);
+              }
+            }}
+          />
+          <div className="poem-actions">
+            <GlowButton
+              className="poem-action-button"
+              text="Complete My Poem"
+              onClick={() => confirmAndNavigateToPoem(poemItem.text)}
+            />
+          </div>
+        </div>
       ))}
 
       {isGeneratingPoem && <NeonSwirlLoader />}
