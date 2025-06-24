@@ -97,7 +97,8 @@ class CSVVectorizer:
     
     def create_vectorstore(self, documents: List[Document]) -> Chroma:
         """
-        Create ChromaDB vectorstore from documents
+        Create and persist ChromaDB vectorstore from documents.
+        Persistence happens automatically when `persist_directory` is provided.
         
         Args:
             documents: List of Document objects
@@ -105,32 +106,23 @@ class CSVVectorizer:
         Returns:
             ChromaDB vectorstore
         """
-        print("Creating vector embeddings...")
+        print("Creating and persisting vector embeddings...")
         
-        # Create ChromaDB vectorstore
+        # Create ChromaDB vectorstore. It will be automatically persisted
+        # to the directory specified in `persist_directory`.
         vectorstore = Chroma.from_documents(
             documents=documents,
             embedding=self.embeddings,
             persist_directory=self.persist_directory
         )
         
-        print(f"Created vectorstore with {len(documents)} documents")
+        print(f"Created and persisted vectorstore with {len(documents)} documents.")
         return vectorstore
     
-    def persist_vectorstore(self, vectorstore: Chroma):
-        """
-        Persist the vectorstore to disk
-        
-        Args:
-            vectorstore: ChromaDB vectorstore to persist
-        """
-        print(f"Persisting vectorstore to {self.persist_directory}")
-        vectorstore.persist()
-        print("Vectorstore persisted successfully!")
     
     def vectorize_csv_folder(self):
         """
-        Complete process: read CSVs, create vectorstore, and persist
+        Complete process: read CSVs and create a persisted vectorstore.
         """
         try:
             # Read CSV files
@@ -140,11 +132,9 @@ class CSVVectorizer:
                 print("No documents to vectorize. Exiting...")
                 return
             
-            # Create vectorstore
-            vectorstore = self.create_vectorstore(documents)
+            # Create and automatically persist the vectorstore
+            self.create_vectorstore(documents)
             
-            # Persist vectorstore
-            self.persist_vectorstore(vectorstore)
             
             print("\n✅ Vectorization completed successfully!")
             print(f"📁 Database saved to: {self.persist_directory}")
@@ -159,7 +149,7 @@ def main():
     Main function to vectorize CSV files
     """
     # Configuration
-    CSV_FOLDER = ""  # Change this to your CSV folder path
+    CSV_FOLDER = "./data"  # Change this to your CSV folder path
     PERSIST_DIR = "./chroma_db"
     
     print("🚀 Starting CSV vectorization process...")
