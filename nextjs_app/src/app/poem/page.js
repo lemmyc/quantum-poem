@@ -24,7 +24,7 @@ const languageCodes = {
   english: "en",
 };
 
-// Hàm lấy background image
+// Hàm lấy background image với fallback
 const getBackgroundImage = (emotion, language = "vn") => {
   const group = emotionGroups[emotion] || 1;
   const langCode = languageCodes[language] || language || "vi";
@@ -90,7 +90,7 @@ function PoemClient() {
         const distance = Math.sqrt(dx * dx + dy * dy);
         if (distance < 100) {
           const angle = Math.atan2(dy, dx);
-          particle.style.transform = `translate(${Math.cos(angle) * 10}px, ${Math.sin(angle) * 10}px)`;
+          particle.style.transform = `translate(${Math.cos(angle) * 10}px, ${Math.cos(angle) * 10}px)`;
         }
       });
     };
@@ -107,6 +107,12 @@ function PoemClient() {
     fear: "😨",
     surprise: "😮",
     happy: "😊",
+  };
+
+  // Deterministic glyph selection
+  const getGlyph = (index) => {
+    const glyphs = ["0", "1", "◆", "⬟"];
+    return glyphs[index % glyphs.length];
   };
 
   const renderContent = () => {
@@ -187,7 +193,7 @@ function PoemClient() {
       <div className="circuit-overlay"></div>
       {[...Array(70)].map((_, i) => (
         <div key={i} className={`particle particle-${i + 1}`}>
-          {i % 8 === 4 ? Math.round(Math.random()) : i % 8 === 5 ? "◆" : i % 8 === 6 ? "⬟" : ""}
+          {getGlyph(i)}
         </div>
       ))}
       <div className="back-button-container">
