@@ -53,7 +53,7 @@
   color: #00ffe7;
   font-family: 'Share Tech Mono', 'Fira Mono', 'Consolas', monospace;
   padding: 18px 24px 14px 24px;
-  z-index: 2000;
+  z-index: 999;
   overflow: hidden;
   animation: cyber-glow 2.2s ease-in-out infinite alternate;
   transition: transform 0.3s ease, box-shadow 0.3s ease;

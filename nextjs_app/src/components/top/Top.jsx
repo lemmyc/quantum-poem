@@ -42,7 +42,7 @@ const Top = () => {
       return;
     }
 
-    const targetPosition = 700;
+    const targetPosition = document.body.scrollHeight - window.innerHeight - 100;
     const startPosition = window.pageYOffset;
     const distance = targetPosition - startPosition;
     const duration = 1400;

@@ -33,6 +33,16 @@ const createGlowTexture = () => {
   return new THREE.CanvasTexture(canvas);
 };
 
+const emotionIcons = {
+  sad: "😢",
+  disgust: "🤢",
+  angry: "😠",
+  neutral: "😐",
+  fear: "😨",
+  surprise: "😮",
+  happy: "😊",
+};
+
 const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGeneratePoemFromSunModel, latestEmotionResult  }) => {
   const mountRef = useRef(null);
   let orbitGroup = null;
@@ -543,13 +553,22 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           closable={false}
           maskClosable={true}
           centered
-          title="Confirming"
-          className={styles.customModal}
+          title="Confirm"
+          className={`${styles.customModal} ${styles.confirmModal}`}
+          style={{ textAlign: 'center', fontSize: '30px', zIndex: 10000 }}
         >
-          <div style={{ textAlign: 'center', padding: '20px' }}>
-            <p dangerouslySetInnerHTML={{ __html: confirmModalText }}></p>
+          <div className={styles.confirmModalText}>
+            <p style={{ textAlign: 'center', fontSize: '22px' }}>
+              Text that matches your emotion
+              {latestEmotionResult?.emotion && (
+                <span style={{ margin: '0 8px', fontSize: '26px', verticalAlign: 'middle' }}>
+                  {emotionIcons[latestEmotionResult.emotion] || ''}
+                </span>
+              )}
+              is <span dangerouslySetInnerHTML={{ __html: confirmModalText.replace('Text that matches your emotion is ', '') }} />
+            </p>
             <div style={{ marginTop: '20px' }}>
-              <Button onClick={handleConfirmCancel} style={{ marginRight: '10px' }}>Hủy</Button>
+              <Button onClick={handleConfirmCancel} style={{ marginRight: '10px' }}>Cancel</Button>
               <Button type="primary" onClick={handleConfirmOk}>OK</Button>
             </div>
           </div>

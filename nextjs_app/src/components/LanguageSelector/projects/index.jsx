@@ -1,11 +1,12 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './style.module.scss';
 import Titles from './titles';
 import Descriptions from './descriptions';
 import { Modal } from 'antd';
 import { ArrowRightOutlined } from '@ant-design/icons';
+import badWords from '../../../data/badWords.json';
 
 const data = [
     {
@@ -16,7 +17,7 @@ const data = [
     },
     {
         title: "VIETNAMESE",
-        description: "Mặt trời lên tỏa nắng hồng,\nCánh chim bay lượn giữa dòng gió thơm.",
+        description: "Mưa xuân khe khẽ,\n Rơi nhẹ trên cành hoa,\n Uớt đẫm hương thơm.",
         speed: 0.5,
         code: "vi"
     },
@@ -40,6 +41,14 @@ export default function Projects() {
     const [selectedLanguage, setSelectedLanguage] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [inputValue, setInputValue] = useState('');
+    const inputRef = useRef(null);
+    const [warning, setWarning] = useState('');
+
+    useEffect(() => {
+        if (showModal && inputRef.current) {
+            inputRef.current.focus();
+        }
+    }, [showModal]);
 
     const handleLanguageSelect = (index) => {
         const language = data[index].title;
@@ -59,6 +68,7 @@ export default function Projects() {
 
     const handleInputChange = (e) => {
         setInputValue(e.target.value);
+        setWarning('');
     };
 
     const handleCancel = () => {
@@ -67,6 +77,13 @@ export default function Projects() {
     };
 
     const handleArrowClick = () => {
+        const bannedWords = badWords.bannedWords;
+        const isBadWord = bannedWords.some(word => inputValue.trim().toLowerCase().includes(word));
+        if (isBadWord) {
+            setWarning('Your input contains inappropriate words. Please try again.');
+            return;
+        }
+        setWarning('');
         if (inputValue.trim() && selectedLanguage) {
             const languageCode = data.find(item => item.title === selectedLanguage)?.code || 'en';
             router.push(`/feature?word=${inputValue.trim()}&language=${languageCode}`);
@@ -92,18 +109,23 @@ export default function Projects() {
             >
                 <div className={styles.modalContent}>
                     <input
+                        ref={inputRef}
                         type="text"
                         className={styles.input}
                         placeholder="Input your topic"
                         value={inputValue}
                         onChange={handleInputChange}
-                        autoFocus
                         onKeyDown={e => { if (e.key === 'Enter') handleArrowClick(); }}
                     />
                     <ArrowRightOutlined 
                         className={styles.arrowIcon} 
                         onClick={handleArrowClick}
                     />
+                    {warning && (
+                        <div style={{ color: 'red', marginTop: 8, textAlign: 'center' }}>
+                            {warning}
+                        </div>
+                    )}
                 </div>
             </Modal>
         </div>
