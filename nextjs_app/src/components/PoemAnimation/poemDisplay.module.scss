@@ -144,7 +144,7 @@
 
 .poem-stats-panel {
   position: absolute;
-  top: 38%;
+  top: 56%;
   left: 50%;
   transform: translate(-50%, -50%);
   min-width: 320px;
@@ -159,7 +159,7 @@
   letter-spacing: 1.2px;
   text-align: center;
   z-index: 1001;
-  animation: panel-glow 2.5s infinite alternate;
+  animation: panel-glow 2.0s infinite alternate;
   line-height: 1.7;
   word-break: break-word;
   text-shadow: 0 0 5px #00ffe5, 0 0 10px #00ffe5;

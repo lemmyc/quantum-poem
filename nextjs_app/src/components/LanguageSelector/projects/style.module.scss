@@ -6,6 +6,7 @@
 
 .customModal {
     :global(.ant-modal-content) {
+        width: 620px;
         background: rgba(10, 20, 30, 0.95);
         box-shadow: 0 0 20px #00ffe7aa;
         border: 2px solid #00ffe7;
@@ -91,4 +92,17 @@
         color: #7fffd4;
         text-shadow: 0 0 16px #7fffd4;
     }
+}
+
+.confirmModalText {
+  white-space: nowrap;
+  overflow-x: auto;
+  text-align: center;
+  font-size: 22px;
+  padding: 24px 32px 16px 32px;
+}
+.confirmModal :global(.ant-modal-content) {
+  min-width: 700px !important;
+  max-width: 90vw;
+  margin: 0 auto !important;
 }

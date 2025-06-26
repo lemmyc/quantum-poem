@@ -281,6 +281,7 @@ function FeatureContent() {
                 setIsGeneratingPoem(false);
               }
             }}
+            emotion={latestEmotionResult?.emotion}
           />
           <div className="poem-actions">
             <GlowButton

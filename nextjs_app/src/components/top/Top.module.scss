@@ -80,7 +80,7 @@ $glow: #3cf0ff;
 
 .content {
   max-width: 700px;
-  margin-left: 140px;
+  margin-left: 100px;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -169,7 +169,7 @@ $glow: #3cf0ff;
     content: "";
     position: absolute;
     inset: 0;
-    background-image: url('/assets/background.gif');
+    // background-image: url('/assets/background.gif');
     background-repeat: no-repeat;
     background-size: cover;
     background-color: #000;         /* hoặc gradient phù hợp */
