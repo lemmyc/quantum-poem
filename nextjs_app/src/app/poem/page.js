@@ -90,7 +90,6 @@ function PoemClient() {
     const wordCount = getWordCount();
     if (wordCount !== lastWordCount) {
       setLastWordCount(wordCount);
-      // Chỉ bật loading nếu thay đổi từ container class (small -> large hoặc ngược lại)
       const currentClass = wordCount > 20 ? "large-frame" : "small-frame";
       const previousClass = lastWordCount > 20 ? "large-frame" : "small-frame";
       
