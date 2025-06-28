@@ -36,6 +36,8 @@ function PoemClient() {
   const [poem, setPoem] = useState(null);
   const [backgroundImage, setBackgroundImage] = useState("");
   const [error, setError] = useState("");
+  const [showLoading, setShowLoading] = useState(true);
+  const [lastWordCount, setLastWordCount] = useState(0);
 
   // Lấy bài thơ từ URL params
   useEffect(() => {
@@ -43,6 +45,8 @@ function PoemClient() {
     const emotionFromParams = searchParams.get("emotion");
     const keywordsFromParams = searchParams.get("keywords");
     const languageFromParams = searchParams.get("language");
+
+    setShowLoading(true); // Luôn bật loading khi bắt đầu
 
     if (poemFromParams) {
       try {
@@ -62,18 +66,43 @@ function PoemClient() {
           updatedPoem.language
         );
         setBackgroundImage(bgImage);
+
+        // Chỉ tắt loading sau 700ms (hoặc khi chắc chắn mọi thứ đã xong)
+        setTimeout(() => setShowLoading(false), 700);
       } catch (e) {
         console.error("Error parsing poem from URL:", e);
         setError("Could not load the poem. It might be corrupted.");
         setBackgroundImage(getBackgroundImage("neutral", "vn"));
+        setShowLoading(false);
       }
     } else {
       setError(
         "No poem data found in the URL. Please go back and create a poem first."
       );
       setBackgroundImage(getBackgroundImage("neutral", "vi"));
+      setShowLoading(false);
     }
   }, [searchParams]);
+
+  // Theo dõi khi số từ đổi thì show loading, sau đó tắt loading sau 700ms (bằng hoặc hơn transition)
+  useEffect(() => {
+    if (!poem) return;
+    const wordCount = getWordCount();
+    if (wordCount !== lastWordCount) {
+      setLastWordCount(wordCount);
+      // Chỉ bật loading nếu thay đổi từ container class (small -> large hoặc ngược lại)
+      const currentClass = wordCount > 20 ? "large-frame" : "small-frame";
+      const previousClass = lastWordCount > 20 ? "large-frame" : "small-frame";
+      
+      if (currentClass !== previousClass) {
+        setShowLoading(true);
+        const timeout = setTimeout(() => setShowLoading(false), 700);
+        return () => clearTimeout(timeout);
+      }
+    } else {
+      setShowLoading(false);
+    }
+  }, [poem, lastWordCount]);
 
   const handleBackClick = () => {
     window.history.back();
@@ -115,6 +144,23 @@ function PoemClient() {
     return glyphs[index % glyphs.length];
   };
 
+  // Calculate word count
+  const getWordCount = () => {
+    if (!poem) return 0;
+    const titleWords = poem.title ? poem.title.split(/\s+/).length : 0;
+    const contentWords = poem.content
+      ? poem.content.split(/\s+/).filter((word) => word.trim()).length
+      : 0;
+    return titleWords + contentWords;
+  };
+
+  // Determine container class based on word count
+  const getContainerClass = () => {
+    const wordCount = getWordCount();
+    if (wordCount > 20) return "large-frame";
+    return "small-frame";
+  };
+
   const renderContent = () => {
     if (error) {
       return (
@@ -130,7 +176,12 @@ function PoemClient() {
     }
 
     return (
-      <div className="poem-container">
+      <div className={`poem-container ${getContainerClass()}${showLoading ? ' fixed-frame' : ''}`}>
+        {showLoading && (
+          <div className="poem-loading-overlay">
+            <NeonSwirlLoader />
+          </div>
+        )}
         <div className="holo-field">
           {[...Array(20)].map((_, i) => (
             <div key={i} className={`holo-particle holo-particle-${i + 1}`}></div>
@@ -152,7 +203,19 @@ function PoemClient() {
               (line, index) =>
                 line.trim() && (
                   <p key={index} className="poem-line" data-text={line}>
-                    {line}
+                    <span className="glitch-overlay" data-text={line}></span>
+                    {line.split(' ').map((word, wordIndex) => (
+                      <span 
+                        key={wordIndex} 
+                        className="word"
+                        style={{ 
+                          animationDelay: `${index * 0.3 + wordIndex * 0.1}s`,
+                          marginRight: '0.3em'
+                        }}
+                      >
+                        {word}
+                      </span>
+                    ))}
                   </p>
                 )
             )}
@@ -181,6 +244,11 @@ function PoemClient() {
         backgroundImage: backgroundImage ? `url(${backgroundImage})` : "none",
       }}
     >
+      {showLoading && (
+        <div className="global-loading-overlay">
+          <NeonSwirlLoader />
+        </div>
+      )}
       <div className="aurora-gradient"></div>
       <div className="aurora-gradient aurora-secondary"></div>
       <div className="glitch-overlay"></div>
