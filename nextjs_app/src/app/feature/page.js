@@ -156,6 +156,7 @@ function FeatureContent() {
           body: JSON.stringify({
             inputText: mainWord,
             emotion: detectedEmotion,
+            language: language
           }),
         });
         const tenWords = await keywordsResponse.json();

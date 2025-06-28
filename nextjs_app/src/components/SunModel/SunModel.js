@@ -554,8 +554,9 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
           maskClosable={true}
           centered
           title="Confirm"
+          width={800}
           className={`${styles.customModal} ${styles.confirmModal}`}
-          style={{ textAlign: 'center', fontSize: '30px', zIndex: 10000 }}
+          style={{ width: "100%", resize: "auto" }}
         >
           <div className={styles.confirmModalText}>
             <p style={{ textAlign: 'center', fontSize: '22px' }}>
