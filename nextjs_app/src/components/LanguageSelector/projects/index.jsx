@@ -33,6 +33,13 @@ const data = [
         speed: 0.8,
         code: "en"
     }
+    ,
+    {
+        title: "CHINESE",
+        description: "🌸 春雨轻轻地下，\n 落在花枝上， \n 香气湿润弥漫。",
+        speed: 0.9,
+        code: "cn"
+    }
 ]
 
 export default function Projects() {
