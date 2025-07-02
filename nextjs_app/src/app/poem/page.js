@@ -45,6 +45,9 @@ function PoemClient() {
   const poemSectionRef = useRef(null);
   const imageSectionRef = useRef(null);
   const [showRealImage, setShowRealImage] = useState(false);
+  const [imageBase64, setImageBase64] = useState(null);
+  const [imageApiLoading, setImageApiLoading] = useState(false);
+  const [imageApiError, setImageApiError] = useState(null);
 
   // Lấy bài thơ từ URL params
   useEffect(() => {
@@ -249,6 +252,38 @@ function PoemClient() {
     return "small-frame";
   };
 
+  // Gọi API generateImage khi poem đã load xong (chỉ gọi 1 lần)
+  useEffect(() => {
+    if (!poem || imageBase64 || imageApiLoading) return;
+    // Chỉ gọi khi poem đã có nội dung và chưa có ảnh
+    if (poem.content && poem.content.trim() !== "") {
+      setImageApiLoading(true);
+      setImageApiError(null);
+      fetch("/api/generateImage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inputText: poem.content }),
+      })
+        .then(async (res) => {
+          if (!res.ok) throw new Error(await res.text());
+          return res.json();
+        })
+        .then((data) => {
+          if (data.image_base64) {
+            setImageBase64(data.image_base64);
+          } else {
+            setImageApiError("No image returned from API");
+          }
+        })
+        .catch((err) => {
+          setImageApiError(err.message || "Error generating image");
+        })
+        .finally(() => {
+          setImageApiLoading(false);
+        });
+    }
+  }, [poem, imageBase64, imageApiLoading]);
+
   const renderContent = () => {
     if (error) {
       return (
@@ -340,7 +375,8 @@ function PoemClient() {
           <div className="image-content">
             <div className="image-side">
               <div className="image-placeholder">
-                {imageLoading ? (
+                {/* Ưu tiên hiển thị ảnh từ API nếu có */}
+                {imageApiLoading ? (
                   <div className="image-generating">
                     <div className="generation-overlay">
                       <div className="generation-grid">
@@ -366,6 +402,19 @@ function PoemClient() {
                       </div>
                     </div>
                   </div>
+                ) : imageBase64 ? (
+                  <div className="image-real-preview">
+                    <img 
+                      src={`data:image/png;base64,${imageBase64}`} 
+                      alt="AI Generated" 
+                      className="neon-image-frame"
+                      key="real-image-api"
+                    />
+                  </div>
+                ) : imageApiError ? (
+                  <div className="image-error">
+                    <p style={{ color: 'red' }}>Image generation failed: {imageApiError}</p>
+                  </div>
                 ) : showRealImage ? (
                   <div className="image-real-preview">
                     <img 
@@ -388,26 +437,15 @@ function PoemClient() {
               </div>
             </div>
             <div className="poem-side">
-              <div className={`poem-container ${getContainerClass()}${showLoading ? ' fixed-frame' : ''}`}> 
-                {showLoading && (
-                  <div className="poem-loading-overlay">
-                    <NeonSwirlLoader />
-                  </div>
-                )}
-                <div className="holo-field">
-                  {[...Array(20)].map((_, i) => (
-                    <div key={i} className={`holo-particle holo-particle-${i + 1}`}></div>
-                  ))}
-                </div>
+              <div className="poem-side-content-centered">
                 <div className="poem-header">
-                  <h1 className="poem-title" data-text={poem?.title}>{poem?.title}</h1>
                   <div className="poem-meta">
                     <span className="emotion-indicator">
                       {emotionIcons[poem?.emotion] || "😐"} {poem?.emotion}
                     </span>
                   </div>
                 </div>
-                <div className="poem-content">
+                <div className="poem-content poem-content-large">
                   {poem?.content
                     .split("\n")
                     .map(
@@ -431,18 +469,6 @@ function PoemClient() {
                         )
                     )}
                 </div>
-                {poem?.keywords.length > 0 && (
-                  <div className="poem-keywords">
-                    <h3>Keywords</h3>
-                    <div className="keywords-list">
-                      {poem.keywords.map((keyword, index) => (
-                        <span key={index} className="keyword-tag" style={{ animationDelay: `${index * 0.3}s` }}>
-                          {keyword}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
