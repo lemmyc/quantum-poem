@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 import NeonSwirlLoader from "../../components/NeonSwirlLoader/NeonSwirlLoader";
 import "./page.scss";
@@ -33,6 +34,7 @@ const getBackgroundImage = (emotion, language = "vn") => {
 
 function PoemClient() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [poem, setPoem] = useState(null);
   const [backgroundImage, setBackgroundImage] = useState("");
   const [error, setError] = useState("");
@@ -114,7 +116,7 @@ function PoemClient() {
   }, [poem, lastWordCount]);
 
   const handleBackClick = () => {
-    window.history.back();
+    router.push("/");
   };
 
   // Scroll event to toggle floating buttons
