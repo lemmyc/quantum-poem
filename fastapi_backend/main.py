@@ -22,7 +22,7 @@ load_dotenv()
 class SearchRequest(BaseModel):
     query: str
     top_k: int = 3
-    language: Optional[Literal["vn", "jp", "en", "kr"]] = None # Thêm trường language
+    language: Optional[Literal["vn", "jp", "en", "kr", "cn"]] = None
 
 class SearchResult(BaseModel):
     content: str
