@@ -67,6 +67,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
   const electronLabelsRef = useRef([]);
   const searchParams = useSearchParams();
   const wordParam = searchParams.get('word');
+  const isProcessingProbabilities = useRef(false);
 
   useEffect(() => {
     electronLabelsRef.current = electronLabels;
@@ -129,6 +130,14 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
   }, [mainWord, latestEmotionResult, wordParam]);
 
   const fetchAndProcessProbabilities = useCallback(async () => {
+    // Prevent duplicate calls
+    if (isProcessingProbabilities.current) {
+      console.log('Already processing probabilities, skipping...');
+      return;
+    }
+    
+    isProcessingProbabilities.current = true;
+    
     const currentElectronLabels = (Array.isArray(electronLabelsRef.current) && electronLabelsRef.current.length >= 5)
       ? electronLabelsRef.current.map(k => k.word || k)
       : [];
@@ -136,6 +145,7 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
 
     if (currentElectronLabels.length === 0) {
       console.warn('Electron labels not available for fetching probabilities.');
+      isProcessingProbabilities.current = false;
       return; 
     }
 
@@ -179,6 +189,8 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
     } catch (error) {
       console.error('Error calling API:', error);
       alert('Error calling API: ' + error.message);
+    } finally {
+      isProcessingProbabilities.current = false;
     }
   }, [wordParam]);
 
@@ -537,11 +549,12 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
   }, [sphereToCorner]);
 
   useEffect(() => {
-    if (isModelLoaded && electronLabels.length > 0 && !initialProbFetchDone.current) {
+    if (isModelLoaded && electronLabels.length > 0 && !initialProbFetchDone.current && !isProcessingProbabilities.current) {
+      console.log('Initializing probability fetch...');
       fetchAndProcessProbabilities();
       initialProbFetchDone.current = true;
     }
-  }, [isModelLoaded, electronLabels]);
+  }, [isModelLoaded, electronLabels, fetchAndProcessProbabilities]);
 
   return (
     <div className="sun-model-container">

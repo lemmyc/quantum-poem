@@ -13,7 +13,7 @@ const emotionIcons = {
   happy: "😊",
 };
 
-const PoemDisplay = ({ text, onWordClick, emotion }) => {
+const PoemDisplay = ({ text, onWordClick, emotion, language }) => {
   const [disperseData, setDisperseData] = useState([]);
   const [reassembled, setReassembled] = useState(false);
   const [glitchIndex, setGlitchIndex] = useState(0);
@@ -133,8 +133,37 @@ const PoemDisplay = ({ text, onWordClick, emotion }) => {
   // Xác nhận chọn cụm từ
   const handleConfirmSelectedPhrase = () => {
     setShowTooltip(false);
-    if (selectedPhrase) {
-      handleWordClick(selectedPhrase);
+    let cleanedPhrase = '';
+    if (language !== 'ja') {
+      const selection = window.getSelection();
+      if (selection && selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        const wordSpans = Array.from(document.querySelectorAll(`.${styles.word}`));
+        // Lấy index các span giao với selection
+        const selectedIndexes = wordSpans
+          .map((span, idx) => {
+            const spanRange = document.createRange();
+            spanRange.selectNodeContents(span);
+            if (
+              range.compareBoundaryPoints(Range.END_TO_START, spanRange) < 0 &&
+              range.compareBoundaryPoints(Range.START_TO_END, spanRange) > 0
+            ) {
+              return idx;
+            }
+            return -1;
+          })
+          .filter(idx => idx !== -1);
+        if (selectedIndexes.length > 0) {
+          const minIdx = Math.min(...selectedIndexes);
+          const maxIdx = Math.max(...selectedIndexes);
+          cleanedPhrase = wordSpans.slice(minIdx, maxIdx + 1).map(span => span.textContent).join('');
+        }
+      }
+    } else {
+      cleanedPhrase = selectedPhrase.replace(/\n/g, '');
+    }
+    if (cleanedPhrase) {
+      handleWordClick(cleanedPhrase);
     }
     setSelectedPhrase('');
   };
@@ -152,40 +181,49 @@ const PoemDisplay = ({ text, onWordClick, emotion }) => {
     let currentWord = [];
     let currentWordIndex = 0;
     let currentLineIndex = 0;
-
+    let buffer = '';
     disperseData.forEach((item, i) => {
       if (item.char === '\n') {
-        if (currentWord.length > 0) {
+        if (buffer.length > 0) {
           currentLine.push({
-            word: currentWord.map(c => c.char).join(''),
+            word: buffer,
             chars: currentWord,
             wordIndex: currentWordIndex++,
           });
+          buffer = '';
           currentWord = [];
         }
         lines.push({ line: currentLine, lineIndex: currentLineIndex++ });
         currentLine = [];
       } else if (item.char === ' ') {
-        if (currentWord.length > 0) {
+        if (buffer.length > 0) {
           currentLine.push({
-            word: currentWord.map(c => c.char).join(''),
+            word: buffer,
             chars: currentWord,
             wordIndex: currentWordIndex++,
           });
+          buffer = '';
           currentWord = [];
         }
+        // Đẩy space thành một từ riêng biệt
+        currentLine.push({
+          word: ' ',
+          chars: [item],
+          wordIndex: currentWordIndex++,
+        });
       } else {
+        buffer += item.char;
         currentWord.push(item);
+        // Nếu là ký tự cuối cùng
+        if (i === disperseData.length - 1) {
+          currentLine.push({
+            word: buffer,
+            chars: currentWord,
+            wordIndex: currentWordIndex++,
+          });
+        }
       }
     });
-
-    if (currentWord.length > 0) {
-      currentLine.push({
-        word: currentWord.map(c => c.char).join(''),
-        chars: currentWord,
-        wordIndex: currentWordIndex,
-      });
-    }
     if (currentLine.length > 0) {
       lines.push({ line: currentLine, lineIndex: currentLineIndex });
     }
@@ -238,9 +276,13 @@ const PoemDisplay = ({ text, onWordClick, emotion }) => {
             <Popover
               open={true}
               content={
-                <div style={{ textAlign: 'center', minWidth: 120 }}>
+                <div style={{ textAlign: 'center' }}>
                   <span style={{ fontSize: 24, marginRight: 8 }}>{currentEmotionIcon}</span>
-                  <b style={{ whiteSpace: 'pre-wrap' }}>{selectedPhrase}</b>
+                  <b style={{
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    display: 'inline-block'
+                  }}>{selectedPhrase}</b>
                   <div style={{ marginTop: 8 }}>
                     <Button type="primary" size="small" onClick={handleConfirmSelectedPhrase} style={{ marginRight: 8 }}>OK</Button>
                     <Button size="small" onClick={handleCancelSelectedPhrase}>Cancel</Button>
@@ -249,7 +291,12 @@ const PoemDisplay = ({ text, onWordClick, emotion }) => {
               }
               placement="topRight"
               arrowPointAtCenter
-              overlayStyle={{ position: 'fixed', left: tooltipPosition.x, top: tooltipPosition.y - 8, zIndex: 9999 }}
+              overlayStyle={{
+                position: 'fixed',
+                left: tooltipPosition.x,
+                top: tooltipPosition.y - 8,
+                zIndex: 9999
+              }}
             >
               <span style={{ position: 'fixed', left: tooltipPosition.x, top: tooltipPosition.y, width: 0, height: 0 }} />
             </Popover>
@@ -330,9 +377,87 @@ const PoemDisplay = ({ text, onWordClick, emotion }) => {
     delay: Math.random() * (isLargePoem ? 3 : 4),
   }));
 
+  // Render thơ tiếng Nhật theo chiều dọc
+  const renderJapanesePoem = () => {
+    // Tách từng dòng, loại bỏ dòng trống
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+    // Mỗi dòng là một cột, mỗi ký tự là một ô trong cột
+    return (
+      <div
+        className={styles.japanesePoemContainer}
+        onMouseUp={e => {
+          const selection = window.getSelection();
+          const selected = selection.toString();
+          if (selected) {
+            let rect = null;
+            try {
+              rect = selection.getRangeAt(0).getBoundingClientRect();
+            } catch (err) {}
+            if (rect) {
+              setTooltipPosition({ x: rect.right, y: rect.top });
+            } else {
+              setTooltipPosition({ x: e.clientX, y: e.clientY });
+            }
+            setSelectedPhrase(selected);
+            setShowTooltip(true);
+          }
+        }}
+        style={{ userSelect: 'text', cursor: 'pointer', position: 'relative' }}
+      >
+        {/* Tooltip xác nhận cụm từ */}
+        {showTooltip && selectedPhrase && (
+          <Popover
+            open={true}
+            content={
+              <div style={{ textAlign: 'center' }}>
+                <span style={{ fontSize: 24, marginRight: 8 }}>{currentEmotionIcon}</span>
+                <b style={{
+                  // whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word',
+                  display: 'inline-block'
+                }}>{selectedPhrase}</b>
+                <div style={{ marginTop: 8 }}>
+                  <Button type="primary" size="small" onClick={handleConfirmSelectedPhrase} style={{ marginRight: 8 }}>OK</Button>
+                  <Button size="small" onClick={handleCancelSelectedPhrase}>Cancel</Button>
+                </div>
+              </div>
+            }
+            placement="topRight"
+            arrowPointAtCenter
+            overlayStyle={{
+              position: 'fixed',
+              left: tooltipPosition.x,
+              top: tooltipPosition.y - 8,
+              zIndex: 9999
+            }}
+          >
+            <span style={{ position: 'fixed', left: tooltipPosition.x, top: tooltipPosition.y, width: 0, height: 0 }} />
+          </Popover>
+        )}
+        {lines.map((line, colIdx) => (
+          <div key={colIdx} className={styles.japaneseColumn}>
+            {Array.from(line).map((char, rowIdx) => (
+              <span
+                key={rowIdx}
+                className={styles.japaneseChar}
+                onClick={() => handleWordClick(char)}
+                onKeyDown={e => e.key === 'Enter' && handleWordClick(char)}
+                role="button"
+                tabIndex={0}
+                aria-label={`Japanese char: ${char}`}
+              >
+                {char}
+              </span>
+            ))}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   return (
     <div className={`${styles['poem-stats-panel']} ${isLargePoem ? styles['large-poem'] : ''}`}>
-      {renderPoem()}
+      {language === 'ja' ? renderJapanesePoem() : renderPoem()}
       <div className={styles['background-particles']}>
         {sparkles.map((sparkle) => (
           <div

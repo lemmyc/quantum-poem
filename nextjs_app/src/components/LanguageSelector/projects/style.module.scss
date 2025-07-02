@@ -21,6 +21,9 @@
     :global(.ant-modal-body) {
         padding: 0;
     }
+    :global(.ant-modal-title) {
+      text-align: center;
+    }
     :global(.ant-modal-content)::before {
         content: '';
         position: absolute;

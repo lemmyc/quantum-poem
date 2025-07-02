@@ -49,6 +49,7 @@ function FeatureContent() {
   const [mainError, setMainError] = useState(null);
   const [sphereToCorner, setSphereToCorner] = useState(false);
   const [isGeneratingPoem, setIsGeneratingPoem] = useState(false);
+  const [isLoadingKeywords, setIsLoadingKeywords] = useState(false);
   const captureRef = useRef(null);
 
   const [latestEmotionResult, setLatestEmotionResult] = useState(null);
@@ -143,11 +144,17 @@ function FeatureContent() {
     }
   };
 
+  // Fixed useEffect to prevent duplicate API calls
   useEffect(() => {
     if (!mainWord || !latestEmotionResult) return;
-    if (keywords !== null) return;
+    if (keywords !== null || isLoadingKeywords) return;
+
+    let isMounted = true;
 
     async function fetchKeywords() {
+      if (!isMounted) return;
+      
+      setIsLoadingKeywords(true);
       try {
         const detectedEmotion = latestEmotionResult.emotion;
         const keywordsResponse = await fetch("/api/generateKeywords", {
@@ -159,12 +166,18 @@ function FeatureContent() {
             language: language
           }),
         });
+        
+        if (!isMounted) return;
+        
         const tenWords = await keywordsResponse.json();
         const probResponse = await fetch("/api/getWordProbabilities", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ keywords: tenWords.keywords }),
         });
+        
+        if (!isMounted) return;
+        
         if (!probResponse.ok) {
           const errorData = await probResponse.json();
           throw new Error(
@@ -182,14 +195,28 @@ function FeatureContent() {
           );
           return;
         }
-        setKeywords(newSortedWords);
+        if (isMounted) {
+          setKeywords(newSortedWords);
+        }
       } catch (err) {
         console.error("Error fetching keywords:", err);
-        setMainError("Error fetching keywords: " + err.message);
+        if (isMounted) {
+          setMainError("Error fetching keywords: " + err.message);
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingKeywords(false);
+        }
       }
     }
+    
     fetchKeywords();
-  }, [mainWord, latestEmotionResult, keywords]);
+
+    // Cleanup function to prevent setting state on unmounted component
+    return () => {
+      isMounted = false;
+    };
+  }, [mainWord, latestEmotionResult, language]); // Removed 'keywords' from dependency array
 
   const confirmAndNavigateToPoem = (poemText) => {
     const detectedEmotion = latestEmotionResult?.emotion || "neutral";
@@ -247,6 +274,7 @@ function FeatureContent() {
         <div className="poem-display-container" key={i}>
           <PoemDisplay
             text={poemItem.text}
+            language = {language}
             onWordClick={async (word) => {
               try {
                 setIsGeneratingPoem(true);
