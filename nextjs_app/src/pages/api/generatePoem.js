@@ -41,20 +41,24 @@ const getPoemPromptDetails = (
 ) => {
   let styleInstruction = "";
   switch (language.toLowerCase()) {
-    case "vietnamese":
-      styleInstruction = process.env.OPENAI_LUCBAT_COMPOSER_STYLE_INSTRUCTION;
+    case "vn":
+      styleInstruction = process.env.OPENAI_VN_COMPOSER_STYLE_INSTRUCTION;
       break;
-    case "japanese":
-      styleInstruction = process.env.OPENAI_HAIKU_COMPOSER_STYLE_INSTRUCTION;
+    case "jp":
+      styleInstruction = process.env.OPENAI_JP_COMPOSER_STYLE_INSTRUCTION;
       break;
-    case "korean":
+    case "kr":
       styleInstruction =
-        process.env.OPENAI_SIJO_POEM_COMPOSER_STYLE_INSTRUCTION;
+        process.env.OPENAI_KR_COMPOSER_STYLE_INSTRUCTION;
       break;
-    case "english":
+    case "cn":
+      styleInstruction =
+        process.env.OPENAI_CN_COMPOSER_STYLE_INSTRUCTION;
+      break;
+    case "en":
     default:
       styleInstruction =
-        process.env.OPENAI_EN_HAIKU_COMPOSER_STYLE_INSTRUCTION;
+        process.env.OPENAI_EN_COMPOSER_STYLE_INSTRUCTION;
       break;
   }
   
@@ -210,7 +214,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { mainWord, subWord, emotion, previousPoem } = req.body;
+    const { mainWord, subWord, emotion, previousPoem, language } = req.body;
 
     if (!mainWord || !subWord || !emotion) {
       return res.status(400).json({
@@ -219,19 +223,20 @@ export default async function handler(req, res) {
     }
 
     // Language detection logic
-    const mainWordLanguage = await detectLanguage(mainWord);
-    const subWordLanguage = await detectLanguage(subWord);
-    const detectedLanguage =
-      mainWordLanguage !== subWordLanguage ? subWordLanguage : mainWordLanguage;
+    // const mainWordLanguage = await detectLanguage(mainWord);
+    // const subWordLanguage = await detectLanguage(subWord);
+    // const detectedLanguage =
+    //   mainWordLanguage !== subWordLanguage ? subWordLanguage : mainWordLanguage;
     const languageMap = {
-      vietnamese: "vn",
-      japanese: "jp",
-      english: "en",
-      korean: "kr",
+      vi: "vn",
+      ja: "jp",
+      en: "en",
+      ko: "kr",
+      cn: "cn",
     };
-    const apiLanguageCode = languageMap[detectedLanguage] || "en";
+    const languageCode = languageMap[language] || "en";
 
-    const topKForSearch = detectedLanguage === 'korean' ? 3 : SEARCH_API_TOP_K;
+    const topKForSearch = languageCode === 'kr' ? 3 : SEARCH_API_TOP_K;
 
     const referencePoemsText = await fetchReferencePoems(
       `${mainWord}
@@ -241,12 +246,12 @@ ${subWord}
 ${previousPoem}
 
 ${emotion}`,
-      apiLanguageCode,
+      languageCode,
       topKForSearch
     );
 
     const finalUserPrompt = getPoemPromptDetails(
-      detectedLanguage,
+      languageCode,
       mainWord,
       subWord,
       emotion,
