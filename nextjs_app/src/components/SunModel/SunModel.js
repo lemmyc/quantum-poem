@@ -537,11 +537,20 @@ const SunModel = ({ mainWord, keywords, onPoem, sphereToCorner, className, onGen
   }, [sphereToCorner]);
 
   useEffect(() => {
-    if (isModelLoaded && electronLabels.length > 0 && !initialProbFetchDone.current) {
+    if (isModelLoaded && electronLabels.length === 5 && !initialProbFetchDone.current) {
       fetchAndProcessProbabilities();
       initialProbFetchDone.current = true;
     }
   }, [isModelLoaded, electronLabels]);
+
+  useEffect(() => {
+    setHighestProbWord(null);
+    setShowConfirmModal(false);
+    initialProbFetchDone.current = false;
+    if (Array.isArray(keywords) && keywords.length === 5) {
+      setElectronLabels(keywords);
+    }
+  }, [keywords]);
 
   return (
     <div className="sun-model-container">
