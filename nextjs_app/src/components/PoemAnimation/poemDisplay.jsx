@@ -13,7 +13,21 @@ const emotionIcons = {
   happy: "😊",
 };
 
+// Hàm lọc bỏ dấu chấm và dấu phẩy chỉ cho thơ Trung và Nhật
+const removePunctuation = (text, language) => {
+  // Chỉ loại bỏ dấu câu cho tiếng Trung và tiếng Nhật
+  if (language === 'cn' || language === 'ja') {
+    // Loại bỏ cả dấu câu phương Tây (.,) và dấu câu truyền thống châu Á (，。)
+    return text.replace(/[.,，。]/g, '');
+  }
+  // Giữ nguyên text cho các ngôn ngữ khác
+  return text;
+};
+
 const PoemDisplay = ({ text, onWordClick, emotion, language }) => {
+  // Lọc bỏ dấu chấm và dấu phẩy từ text chỉ cho thơ Trung và Nhật
+  const cleanedText = removePunctuation(text, language);
+  
   const [disperseData, setDisperseData] = useState([]);
   const [reassembled, setReassembled] = useState(false);
   const [glitchIndex, setGlitchIndex] = useState(0);
@@ -27,7 +41,7 @@ const PoemDisplay = ({ text, onWordClick, emotion, language }) => {
   const [selectedPhrase, setSelectedPhrase] = useState('');
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
 
-  const wordCount = text.split(/\s+/).filter(word => word.length > 0).length;
+  const wordCount = cleanedText.split(/\s+/).filter(word => word.length > 0).length;
   const isLargePoem = wordCount > 50;
 
   const glitchClasses = [
@@ -42,7 +56,7 @@ const PoemDisplay = ({ text, onWordClick, emotion, language }) => {
   useEffect(() => {
     if (isVertical) {
       // Vertical poem: disperse theo cột/dòng
-      const lines = text.split('\n');
+      const lines = cleanedText.split('\n');
       const maxLen = Math.max(...lines.map(line => line.length));
       const initialData = [];
       lines.forEach((line, colIdx) => {
@@ -66,7 +80,7 @@ const PoemDisplay = ({ text, onWordClick, emotion, language }) => {
       return;
     }
     if (!isLargePoem) {
-      const initialData = text.split('').map((char, idx) => ({
+      const initialData = cleanedText.split('').map((char, idx) => ({
         char,
         x: ((Math.random() * window.innerWidth - window.innerWidth / 2) * 0.6).toFixed(2),
         y: ((Math.random() * window.innerHeight - window.innerHeight / 2) * 0.6).toFixed(2),
@@ -74,23 +88,23 @@ const PoemDisplay = ({ text, onWordClick, emotion, language }) => {
         phase: Math.random() * 2 * Math.PI,
         scale: (Math.random() * 0.5 + 0.8).toFixed(2),
         idx,
-        wordIndex: text.slice(0, idx + 1).split(' ').length - 1,
-        lineIndex: text.slice(0, idx + 1).split('\n').length - 1,
+        wordIndex: cleanedText.slice(0, idx + 1).split(' ').length - 1,
+        lineIndex: cleanedText.slice(0, idx + 1).split('\n').length - 1,
       }));
       setDisperseData(initialData);
     } else {
       // For large poems, initialize with index-based data for glitch
-      const initialData = text.split('').map((char, idx) => ({
+      const initialData = cleanedText.split('').map((char, idx) => ({
         char,
         idx,
-        wordIndex: text.slice(0, idx + 1).split(' ').length - 1,
-        lineIndex: text.slice(0, idx + 1).split('\n').length - 1,
+        wordIndex: cleanedText.slice(0, idx + 1).split(' ').length - 1,
+        lineIndex: cleanedText.slice(0, idx + 1).split('\n').length - 1,
       }));
       setDisperseData(initialData);
     }
     setReassembled(false);
     setGlitchIndex(0);
-  }, [text, isLargePoem, isVertical]);
+  }, [cleanedText, isLargePoem, isVertical]);
 
   // Dispersion animation for small poems and vertical poems
   useEffect(() => {
@@ -205,7 +219,7 @@ const PoemDisplay = ({ text, onWordClick, emotion, language }) => {
 
   const renderPoem = () => {
     if (isVertical) {
-      const lines = text.split('\n');
+      const lines = cleanedText.split('\n');
       const maxLen = Math.max(...lines.map(line => line.length));
       // Render vertical poem với hiệu ứng động
       return (

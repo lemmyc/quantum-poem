@@ -10,7 +10,7 @@ const IMAGE_MODEL_NAME = process.env.OPENAI_IMAGE_MODEL_NAME || "gpt-image-1";
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
-      const { inputText, size = "1024x1536" } = req.body;
+      const { inputText, language, size = "1024x1536" } = req.body;
 
       if (!inputText || typeof inputText !== 'string' || inputText.trim() === '') {
         return res.status(400).json({ error: 'Missing or empty "inputText" in request body' });
@@ -22,7 +22,10 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: 'Server configuration error: Image generator prompt missing.' });
       }
 
-      const finalPrompt = basePromptTemplate.replace('{inputText}', inputText);
+      let finalPrompt = basePromptTemplate.replace('{inputText}', inputText);
+      if (language === "cn" || language === "ja") {
+        finalPrompt += "\nplease also include the original poem text written in traditional calligraphy style on the image (for example, vertically or in a brushstroke style), as an artistic overlay. "
+      }
 
       console.log(`Generating image with model: ${IMAGE_MODEL_NAME} and prompt: "${finalPrompt}"`);
 

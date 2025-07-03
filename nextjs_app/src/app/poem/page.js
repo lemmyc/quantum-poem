@@ -264,7 +264,7 @@ function PoemClient() {
       fetch("/api/generateImage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ inputText: poem.content }),
+        body: JSON.stringify({ inputText: poem.content, language: poem.language }),
       })
         .then(async (res) => {
           if (!res.ok) throw new Error(await res.text());
