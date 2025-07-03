@@ -75,7 +75,7 @@ const Top = () => {
       <main className={styles.main}>
         <section className={styles.content}>
           <h1 className={styles.title + ' text_slogan'}>
-            "Where art and quantum intersect."
+            "Where art meets the quantum world."
           </h1>
           <p className={styles.description}>
             A poetic experiment where quantum concepts and human emotions intertwine...

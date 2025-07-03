@@ -26,7 +26,9 @@ export default async function handler(req, res) {
       if (language === "cn" || language === "ja") {
         finalPrompt += "\nplease also include the original poem text written in traditional calligraphy style on the image (for example, vertically or in a brushstroke style), as an artistic overlay. "
       }
-
+      if (language === "en" || language === "ko") {
+        finalPrompt += "\nplease DO NOT include the original poem text on the image "
+      }
       console.log(`Generating image with model: ${IMAGE_MODEL_NAME} and prompt: "${finalPrompt}"`);
 
       // API Call

@@ -403,26 +403,6 @@ const PoemDisplay = ({ text, onWordClick, emotion, language }) => {
           style={{ userSelect: 'text', cursor: 'pointer', position: 'relative' }}
         >
           {/* Tooltip xác nhận cụm từ */}
-          {showTooltip && selectedPhrase && (
-            <Popover
-              open={true}
-              content={
-                <div style={{ textAlign: 'center', minWidth: 120 }}>
-                  <span style={{ fontSize: 24, marginRight: 8 }}>{currentEmotionIcon}</span>
-                  <b style={{ whiteSpace: 'pre-wrap' }}>{selectedPhrase}</b>
-                  <div style={{ marginTop: 8 }}>
-                    <Button type="primary" size="small" onClick={handleConfirmSelectedPhrase} style={{ marginRight: 8 }}>OK</Button>
-                    <Button size="small" onClick={handleCancelSelectedPhrase}>Cancel</Button>
-                  </div>
-                </div>
-              }
-              placement="topRight"
-              arrowPointAtCenter
-              overlayStyle={{ position: 'fixed', left: tooltipPosition.x, top: tooltipPosition.y - 8, zIndex: 9999 }}
-            >
-              <span style={{ position: 'fixed', left: tooltipPosition.x, top: tooltipPosition.y, width: 0, height: 0 }} />
-            </Popover>
-          )}
           {newLine.map(({ word, chars, wordIndex }, wordIdx) => (
             <span
               key={`${lineIndex}-${wordIndex}`}
