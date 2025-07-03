@@ -43,7 +43,13 @@ function FeatureContent() {
   const mainWord = searchParams.get("word");
   const language = searchParams.get("language") || "en"; // Get language from URL
 
-  const [keywords, setKeywords] = useState(null);
+  const [keywords, setKeywords] = useState([
+    { word: "アイデア", probability: 0.95 },
+    { word: "仲間", probability: 0.88 },
+    { word: "喜び", probability: 0.82 },
+    { word: "閃き", probability: 0.76 },
+    { word: "ハックタイム", probability: 0.70 }
+  ]);
   const [poem, setPoem] = useState({ text: "", animate: false });
   const [extraPoems, setExtraPoems] = useState([]);
   const [mainError, setMainError] = useState(null);
@@ -116,27 +122,30 @@ function FeatureContent() {
       setIsGeneratingPoem(true);
       const detectedEmotion = latestEmotionResult?.emotion || "happy";
 
-      const result = await retryApiCall(async () => {
-        const res = await fetch("/api/generatePoem", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            mainWord: mainWord,
-            subWord: subWord,
-            emotion: detectedEmotion,
-            language: language, // Pass language to API
-          }),
-        });
+      // Vô hiệu hóa API call - set cứng newPoemText
+      // const result = await retryApiCall(async () => {
+      //   const res = await fetch("/api/generatePoem", {
+      //     method: "POST",
+      //     headers: { "Content-Type": "application/json" },
+      //     body: JSON.stringify({
+      //       mainWord: mainWord,
+      //       subWord: subWord,
+      //       emotion: detectedEmotion,
+      //       language: language, // Pass language to API
+      //     }),
+      //   });
         
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
+      //   if (!res.ok) {
+      //     throw new Error(`HTTP error! status: ${res.status}`);
+      //   }
         
-        return await res.json();
-      });
+      //   return await res.json();
+      // });
 
-      const newPoemText = result.poem || "Could not generate new poem";
-      setExtraPoems([{ text: newPoemText, animate: true }]);
+      // Set cứng newPoemText thay vì gọi API
+
+setExtraPoems([{ text: 'Hack time lights the spark \nIdeas flow through the night \n Dreams rise with the dawn', animate: true }]);
+    
     } catch (e) {
       console.error("Error generating poem from SunModel:", e);
       setExtraPoems([{ text: "Error generating new poem!", animate: true }]);
@@ -145,10 +154,11 @@ function FeatureContent() {
     }
   };
 
-  useEffect(() => {
-    setKeywords(null); // Reset keywords mỗi khi mainWord đổi
-    setFirstDetectedEmotion(null); // Reset emotion đầu tiên khi mainWord đổi
-  }, [mainWord]);
+  // Vô hiệu hóa useEffect reset keywords vì đang dùng hardcoded
+  // useEffect(() => {
+  //   setKeywords(null); // Reset keywords mỗi khi mainWord đổi
+  //   setFirstDetectedEmotion(null); // Reset emotion đầu tiên khi mainWord đổi
+  // }, [mainWord]);
 
   useEffect(() => {
     if (!firstDetectedEmotion && latestEmotionResult?.emotion) {
@@ -156,53 +166,54 @@ function FeatureContent() {
     }
   }, [latestEmotionResult, firstDetectedEmotion]);
 
-  useEffect(() => {
-    if (!mainWord || !firstDetectedEmotion) return;
-    if (keywords !== null) return;
+  // Vô hiệu hóa useEffect fetch keywords vì đang dùng hardcoded
+  // useEffect(() => {
+  //   if (!mainWord || !firstDetectedEmotion) return;
+  //   if (keywords !== null) return;
 
-    async function fetchKeywords() {
-      try {
-        const detectedEmotion = firstDetectedEmotion;
-        const keywordsResponse = await fetch("/api/generateKeywords", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            inputText: mainWord,
-            emotion: detectedEmotion,
-            language: language
-          }),
-        });
-        const tenWords = await keywordsResponse.json();
-        const probResponse = await fetch("/api/getWordProbabilities", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ keywords: tenWords.keywords }),
-        });
-        if (!probResponse.ok) {
-          const errorData = await probResponse.json();
-          throw new Error(
-            errorData.error || "Unable to get new keyword probabilities."
-          );
-        }
-        const probData = await probResponse.json();
-        const newSortedWords = (probData.results || [])
-          .sort((a, b) => b.probability - a.probability)
-          .slice(0, 5)
-          .map((item) => ({ word: item.word, probability: item.probability }));
-        if (newSortedWords.length === 0) {
-          setMainError(
-            "Could not determine relevant keywords. Please try again."
-          );
-          return;
-        }
-        setKeywords(newSortedWords);
-      } catch (err) {
-        console.error("Error fetching keywords:", err);
-        setMainError("Error fetching keywords: " + err.message);
-      }
-    }
-    fetchKeywords();
-  }, [mainWord, firstDetectedEmotion, keywords]);
+  //   async function fetchKeywords() {
+  //     try {
+  //       const detectedEmotion = firstDetectedEmotion;
+  //       const keywordsResponse = await fetch("/api/generateKeywords", {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({
+  //           inputText: mainWord,
+  //           emotion: detectedEmotion,
+  //           language: language
+  //         }),
+  //       });
+  //       const tenWords = await keywordsResponse.json();
+  //       const probResponse = await fetch("/api/getWordProbabilities", {
+  //         method: "POST",
+  //         headers: { "Content-Type": "application/json" },
+  //         body: JSON.stringify({ keywords: tenWords.keywords }),
+  //       });
+  //       if (!probResponse.ok) {
+  //         const errorData = await probResponse.json();
+  //         throw new Error(
+  //           errorData.error || "Unable to get new keyword probabilities."
+  //         );
+  //       }
+  //       const probData = await probResponse.json();
+  //       const newSortedWords = (probData.results || [])
+  //         .sort((a, b) => b.probability - a.probability)
+  //         .slice(0, 5)
+  //         .map((item) => ({ word: item.word, probability: item.probability }));
+  //       if (newSortedWords.length === 0) {
+  //         setMainError(
+  //           "Could not determine relevant keywords. Please try again."
+  //         );
+  //         return;
+  //       }
+  //       setKeywords(newSortedWords);
+  //     } catch (err) {
+  //       console.error("Error fetching keywords:", err);
+  //       setMainError("Error fetching keywords: " + err.message);
+  //     }
+  //   }
+  //   fetchKeywords();
+  // }, [mainWord, firstDetectedEmotion, keywords]);
 
   const confirmAndNavigateToPoem = (poemText) => {
     const detectedEmotion = latestEmotionResult?.emotion || "neutral";
@@ -265,24 +276,28 @@ function FeatureContent() {
               try {
                 setIsGeneratingPoem(true);
                 const detectedEmotion = latestEmotionResult?.emotion || "happy";
-                const result = await retryApiCall(async () => {
-                  const res = await fetch("/api/generatePoem", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      mainWord: mainWord,
-                      subWord: word,
-                      emotion: detectedEmotion,
-                      language: language,
-                    }),
-                  });
-                  if (!res.ok) {
-                    throw new Error(`HTTP error! status: ${res.status}`);
-                  }
-                  return await res.json();
-                });
-                const newPoemText = result.poem || "Could not generate new poem";
-                setExtraPoems([{ text: newPoemText, animate: true }]);
+                
+                // Vô hiệu hóa API call - set cứng newPoemText
+                // const result = await retryApiCall(async () => {
+                //   const res = await fetch("/api/generatePoem", {
+                //     method: "POST",
+                //     headers: { "Content-Type": "application/json" },
+                //     body: JSON.stringify({
+                //       mainWord: mainWord,
+                //       subWord: word,
+                //       emotion: detectedEmotion,
+                //       language: language,
+                //     }),
+                //   });g
+                //   if (!res.ok) {
+                //     throw new Error(`HTTP error! status: ${res.status}`);
+                //   }
+                //   return await res.json();
+                // });
+                
+                // Set cứng newPoemText thay vì gọi API;
+                setExtraPoems([{ text: 'Bàn tay gõ nhịp mê say \n Hack time nổi sóng, ý bay giữa trời \n Cười vang một góc rạng ngời \n Đồng lòng viết tiếp những lời tương lai  ', animate: true }]);
+
               } catch (e) {
                 console.error("Error generating poem from word click:", e);
                 setExtraPoems([
