@@ -10,21 +10,21 @@ import badWords from '../../../data/badWords.json';
 
 const data = [
     {
-        title: "JAPANESE",
-        description: "春の雨 \n 静かに降る \n 花を濡らす",
-        speed: 0.5,
-        code: "ja"
-    },
-    {
         title: "VIETNAMESE",
         description: "Mưa xuân khe khẽ,\n Rơi nhẹ trên cành hoa,\n Uớt đẫm hương thơm.",
-        speed: 0.5,
+        speed: 0.6,
         code: "vi"
+    },
+    {
+        title: "JAPANESE",
+        description: "春の雨 \n 静かに降る \n 花を濡らす",
+        speed: 0.6,
+        code: "ja"
     },
     {
         title: "KOREAN",
         description: "봄의 비 \n 조용히 내리는 \n 꽃을 젖히는",
-        speed: 0.67,
+        speed: 0.7,
         code: "ko"
     },
     {

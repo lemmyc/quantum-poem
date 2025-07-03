@@ -62,6 +62,8 @@ function FeatureContent() {
     setError: setEmotionError,
   } = useEmotionWorker();
 
+  const [firstDetectedEmotion, setFirstDetectedEmotion] = useState(null);
+
   // Central emotion processing loop
   useEffect(() => {
     if (!emotionModelReady || !captureRef.current?.video) {
@@ -144,12 +146,23 @@ function FeatureContent() {
   };
 
   useEffect(() => {
-    if (!mainWord || !latestEmotionResult) return;
+    setKeywords(null); // Reset keywords mỗi khi mainWord đổi
+    setFirstDetectedEmotion(null); // Reset emotion đầu tiên khi mainWord đổi
+  }, [mainWord]);
+
+  useEffect(() => {
+    if (!firstDetectedEmotion && latestEmotionResult?.emotion) {
+      setFirstDetectedEmotion(latestEmotionResult.emotion);
+    }
+  }, [latestEmotionResult, firstDetectedEmotion]);
+
+  useEffect(() => {
+    if (!mainWord || !firstDetectedEmotion) return;
     if (keywords !== null) return;
 
     async function fetchKeywords() {
       try {
-        const detectedEmotion = latestEmotionResult.emotion;
+        const detectedEmotion = firstDetectedEmotion;
         const keywordsResponse = await fetch("/api/generateKeywords", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -189,7 +202,7 @@ function FeatureContent() {
       }
     }
     fetchKeywords();
-  }, [mainWord, latestEmotionResult, keywords]);
+  }, [mainWord, firstDetectedEmotion, keywords]);
 
   const confirmAndNavigateToPoem = (poemText) => {
     const detectedEmotion = latestEmotionResult?.emotion || "neutral";
@@ -248,10 +261,10 @@ function FeatureContent() {
           <PoemDisplay
             text={poemItem.text}
             onWordClick={async (word) => {
+              if (isGeneratingPoem) return; // Chặn double click hoặc click khi đang loading
               try {
                 setIsGeneratingPoem(true);
                 const detectedEmotion = latestEmotionResult?.emotion || "happy";
-                
                 const result = await retryApiCall(async () => {
                   const res = await fetch("/api/generatePoem", {
                     method: "POST",
@@ -263,14 +276,11 @@ function FeatureContent() {
                       language: language,
                     }),
                   });
-                  
                   if (!res.ok) {
                     throw new Error(`HTTP error! status: ${res.status}`);
                   }
-                  
                   return await res.json();
                 });
-
                 const newPoemText = result.poem || "Could not generate new poem";
                 setExtraPoems([{ text: newPoemText, animate: true }]);
               } catch (e) {
@@ -283,6 +293,7 @@ function FeatureContent() {
               }
             }}
             emotion={latestEmotionResult?.emotion}
+            language={language}
           />
           <div className="poem-actions">
             <GlowButton

@@ -350,8 +350,6 @@
       overflow-y: auto;
       padding-bottom: clamp(1rem, 2vw, 1.5rem);
       opacity: 1;
-      transform: translateY(0);
-      transition: all 0.3s ease;
       position: relative;
 
       &::after {
@@ -915,154 +913,25 @@
     }
   }
 
-  .poem-line {
+  .poem-line,
+  .poem-line-bottom {
     font-family: 'Orbitron', 'Roboto Mono', monospace;
     font-size: clamp(0.9rem, 2.5vw, 1.3rem);
     line-height: 2;
     margin-bottom: clamp(0.5rem, 1vw, 1rem);
     text-align: center;
-    background: linear-gradient(45deg, var(--neon-cyan), var(--neon-blue), var(--neon-cyan));
-    background-size: 400% 400%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 
-      0 0 clamp(10px, 2vw, 15px) rgba(0, 255, 231, 0.8),
-      0 0 clamp(20px, 4vw, 30px) rgba(0, 183, 235, 0.6),
-      0 0 clamp(30px, 6vw, 45px) rgba(0, 255, 231, 0.4);
-    opacity: 0;
-    transform: translateY(30px);
-    transition: all 0.4s ease;
-    position: relative;
-    animation: textGlow 3s ease-in-out infinite alternate, lineFadeIn 1s ease-out forwards;
-    letter-spacing: clamp(1px, 0.3vw, 2px);
+    color: var(--neon-cyan);
     font-weight: 500;
-    overflow: hidden;
-
-    // Typewriter cursor effect
-    &::after {
-      content: '|';
-      position: absolute;
-      right: -5px;
-      top: 0;
-      color: var(--neon-cyan);
-      font-weight: bold;
-      animation: cursorBlink 1s infinite;
-      opacity: 0;
-    }
-
-    &:hover::after {
-      opacity: 1;
-    }
-
-    // Holographic effect
-    &::before {
-      content: attr(data-text);
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(
-        90deg,
-        transparent 0%,
-        rgba(0, 255, 231, 0.8) 25%,
-        rgba(0, 183, 235, 0.8) 50%,
-        rgba(0, 255, 231, 0.8) 75%,
-        transparent 100%
-      );
-      background-size: 200% 100%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: holographicSweep 4s linear infinite;
-      opacity: 0.7;
-      z-index: 1;
-    }
-
-    // Glitch effect overlay
-    .glitch-overlay {
-      content: attr(data-text);
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--neon-cyan);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      opacity: 0;
-      animation: glitchText 8s infinite;
-      z-index: 2;
-    }
-
-    &:hover {
-      background-size: 200% 200%;
-      text-shadow: 
-        0 0 clamp(20px, 4vw, 30px) rgba(0, 255, 231, 0.9),
-        0 0 clamp(30px, 6vw, 45px) rgba(0, 183, 235, 0.7),
-        0 0 clamp(40px, 8vw, 60px) rgba(0, 255, 231, 0.5);
-      transform: scale(1.05) translateY(-3px);
-      animation: textPulse 0.6s ease-in-out;
-      
-      &::before {
-        animation: holographicSweep 1s linear infinite;
-        opacity: 1;
-      }
-      
-      .glitch-overlay {
-        animation: glitchTextHover 0.3s ease-in-out;
-        opacity: 0.3;
-      }
-    }
-
-    // Word reveal effect
-    .word {
-      display: inline-block;
-      opacity: 0;
-      transform: translateY(20px);
-      animation: wordReveal 0.8s ease-out forwards;
-    }
-  }
-
-  // Individual line animations for staggered effect
-  .poem-line:nth-child(1) { 
-    animation-delay: 0s;
-    &::after { animation-delay: 0s; }
-  }
-  .poem-line:nth-child(2) { 
-    animation-delay: 0.2s;
-    &::after { animation-delay: 0.2s; }
-  }
-  .poem-line:nth-child(3) { 
-    animation-delay: 0.4s;
-    &::after { animation-delay: 0.4s; }
-  }
-  .poem-line:nth-child(4) { 
-    animation-delay: 0.6s;
-    &::after { animation-delay: 0.6s; }
-  }
-  .poem-line:nth-child(5) { 
-    animation-delay: 0.8s;
-    &::after { animation-delay: 0.8s; }
-  }
-  .poem-line:nth-child(6) { 
-    animation-delay: 1s;
-    &::after { animation-delay: 1s; }
-  }
-  .poem-line:nth-child(7) { 
-    animation-delay: 1.2s;
-    &::after { animation-delay: 1.2s; }
-  }
-  .poem-line:nth-child(8) { 
-    animation-delay: 1.4s;
-    &::after { animation-delay: 1.4s; }
-  }
-  .poem-line:nth-child(9) { 
-    animation-delay: 1.6s;
-    &::after { animation-delay: 1.6s; }
-  }
-  .poem-line:nth-child(10) { 
-    animation-delay: 1.8s;
-    &::after { animation-delay: 1.8s; }
+    background: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    letter-spacing: 0.02em;
+    opacity: 1;
+    transform: none !important;
+    transition: none !important;
+    position: static;
+    overflow: visible !important;
+    animation: none !important;
   }
 
   @keyframes glitch {
@@ -1866,4 +1735,30 @@
     font-size: 1rem;
     padding: 0.6rem 1.2rem;
   }
+}
+
+.poem-line-botton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.vertical-poem {
+  writing-mode: initial !important;
+  display: flex;
+  flex-direction: row-reverse;
+  justify-content: center;
+  align-items: flex-start;
+  width: fit-content;
+  margin: 0 auto;
+}
+.vertical-poem .poem-line {
+  color: #00ffe7 !important;
+  background: none !important;
+  text-shadow: 0 0 0 #00ffe7, 0 0 0 #00ffe7 !important;
+  font-family: 'Noto Sans JP', 'Arial', sans-serif !important;
+  opacity: 1 !important;
+  filter: none !important;
+  mix-blend-mode: normal !important;
 }

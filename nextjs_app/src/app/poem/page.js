@@ -324,29 +324,59 @@ function PoemClient() {
           </div>
         </div>
 
-        <div className="poem-content">
-          {poem.content
-            .split("\n")
-            .map(
-              (line, index) =>
-                line.trim() && (
-                  <p key={index} className="poem-line" data-text={line}>
-                    <span className="glitch-overlay" data-text={line}></span>
-                    {line.split(' ').map((word, wordIndex) => (
-                      <span 
-                        key={wordIndex} 
-                        className="word"
-                        style={{ 
-                          animationDelay: `${index * 0.3 + wordIndex * 0.1}s`,
-                          marginRight: '0.3em'
-                        }}
-                      >
-                        {word}
-                      </span>
-                    ))}
-                  </p>
-                )
-            )}
+        <div className={`poem-content${['ja','cn'].includes(poem.language) ? ' vertical-poem' : ''}`}>
+          {(['ja','cn'].includes(poem.language)) ? (
+            <div
+              className="vertical-poem"
+              style={{
+                display: 'flex',
+                flexDirection: 'row-reverse',
+                justifyContent: 'center',
+                alignItems: 'flex-start',
+                width: 'fit-content',
+                margin: '0 auto'
+              }}
+            >
+              {poem.content.split('\n').map((line, colIdx) => (
+                <div
+                  key={colIdx}
+                  className="poem-line"
+                  style={{
+                    writingMode: 'vertical-rl',
+                    textAlign: 'center',
+                    margin: '0 0.5em',
+                    whiteSpace: 'pre',
+                    fontSize: '1.5em'
+                  }}
+                >
+                  {line}
+                </div>
+              ))}
+            </div>
+          ) : (
+            poem.content
+              .split("\n")
+              .map(
+                (line, index) =>
+                  line.trim() && (
+                    <p key={index} className="poem-line" data-text={line}>
+                      <span className="glitch-overlay" data-text={line}></span>
+                      {line.split(' ').map((word, wordIndex) => (
+                        <span 
+                          key={wordIndex} 
+                          className="word"
+                          style={{ 
+                            animationDelay: `${index * 0.3 + wordIndex * 0.1}s`,
+                            marginRight: '0.3em'
+                          }}
+                        >
+                          {word}
+                        </span>
+                      ))}
+                    </p>
+                  )
+              )
+          )}
         </div>
 
         {poem.keywords.length > 0 && (
@@ -448,28 +478,61 @@ function PoemClient() {
                   </div>
                 </div>
                 <div className="poem-content poem-content-large">
-                  {poem?.content
-                    .split("\n")
-                    .map(
-                      (line, index) =>
+                  {(['ja','cn'].includes(poem.language) && poem?.content) ? (
+                    <div
+                      className="vertical-poem"
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'row-reverse',
+                        justifyContent: 'center',
+                        alignItems: 'flex-start',
+                        width: 'fit-content',
+                        margin: '0 auto'
+                      }}
+                    >
+                      {poem.content.split('\n').map((line, colIdx) => (
                         line.trim() && (
-                          <p key={index} className="poem-line" data-text={line}>
-                            <span className="glitch-overlay" data-text={line}></span>
-                            {line.split(' ').map((word, wordIndex) => (
-                              <span 
-                                key={wordIndex} 
-                                className="word"
-                                style={{ 
-                                  animationDelay: `${index * 0.3 + wordIndex * 0.1}s`,
-                                  marginRight: '0.3em'
-                                }}
-                              >
-                                {word}
-                              </span>
-                            ))}
-                          </p>
+                          <div
+                            key={colIdx}
+                            className="poem-line"
+                            style={{
+                              writingMode: 'vertical-rl',
+                              textAlign: 'center',
+                              margin: '0 0.5em',
+                              whiteSpace: 'pre',
+                              fontSize: '1.5em'
+                            }}
+                          >
+                            {line}
+                          </div>
                         )
-                    )}
+                      ))}
+                    </div>
+                  ) : (
+                    poem?.content &&
+                    poem.content
+                      .split("\n")
+                      .map(
+                        (line, index) =>
+                          line.trim() && (
+                            <p key={index} className="poem-line-bottom" data-text={line}>
+                              <span className="glitch-overlay" data-text={line}></span>
+                              {line.split(' ').map((word, wordIndex) => (
+                                <span 
+                                  key={wordIndex} 
+                                  className="word"
+                                  style={{ 
+                                    animationDelay: `${index * 0.3 + wordIndex * 0.1}s`,
+                                    marginRight: '0.3em'
+                                  }}
+                                >
+                                  {word}
+                                </span>
+                              ))}
+                            </p>
+                          )
+                      )
+                  )}
                 </div>
               </div>
             </div>

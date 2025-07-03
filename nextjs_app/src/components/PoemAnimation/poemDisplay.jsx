@@ -13,7 +13,7 @@ const emotionIcons = {
   happy: "😊",
 };
 
-const PoemDisplay = ({ text, onWordClick, emotion }) => {
+const PoemDisplay = ({ text, onWordClick, emotion, language }) => {
   const [disperseData, setDisperseData] = useState([]);
   const [reassembled, setReassembled] = useState(false);
   const [glitchIndex, setGlitchIndex] = useState(0);
@@ -36,8 +36,35 @@ const PoemDisplay = ({ text, onWordClick, emotion }) => {
     'glitch-out-zoom',
   ];
 
+  const isVertical = language === 'ja' || language === 'cn';
+
   // Initialize characters with random positions for small poems
   useEffect(() => {
+    if (isVertical) {
+      // Vertical poem: disperse theo cột/dòng
+      const lines = text.split('\n');
+      const maxLen = Math.max(...lines.map(line => line.length));
+      const initialData = [];
+      lines.forEach((line, colIdx) => {
+        for (let rowIdx = 0; rowIdx < maxLen; rowIdx++) {
+          const char = line[rowIdx] || ' ';
+          initialData.push({
+            char,
+            col: colIdx,
+            row: rowIdx,
+            x: (Math.random() * 120 - 60).toFixed(2),
+            y: (Math.random() * 120 - 60).toFixed(2),
+            r: (Math.random() * 60 - 30).toFixed(2),
+            scale: (Math.random() * 0.5 + 0.8).toFixed(2),
+            idx: colIdx * maxLen + rowIdx,
+          });
+        }
+      });
+      setDisperseData(initialData);
+      setReassembled(false);
+      setGlitchIndex(0);
+      return;
+    }
     if (!isLargePoem) {
       const initialData = text.split('').map((char, idx) => ({
         char,
@@ -63,11 +90,41 @@ const PoemDisplay = ({ text, onWordClick, emotion }) => {
     }
     setReassembled(false);
     setGlitchIndex(0);
-  }, [text, isLargePoem]);
+  }, [text, isLargePoem, isVertical]);
 
-  // Dispersion animation for small poems
+  // Dispersion animation for small poems and vertical poems
   useEffect(() => {
-    if (!isLargePoem && !reassembled && disperseData.length > 0) {
+    if (isVertical && !reassembled && disperseData.length > 0) {
+      startTimeRef.current = performance.now();
+      const animate = (currentTime) => {
+        const elapsed = currentTime - startTimeRef.current;
+        if (elapsed >= 1500) {
+          setReassembled(true);
+          return;
+        }
+        if (currentTime - lastUpdateRef.current >= 50) {
+          setDisperseData((prev) =>
+            prev.map((item) => {
+              const dx = (Math.random() * 40 - 20).toFixed(2);
+              const dy = (Math.random() * 40 - 20).toFixed(2);
+              const dr = (Math.random() * 30 - 15).toFixed(2);
+              const scale = (Math.random() * 0.5 + 0.8).toFixed(2);
+              return {
+                ...item,
+                x: (parseFloat(item.x) + parseFloat(dx) * 0.3).toFixed(2),
+                y: (parseFloat(item.y) + parseFloat(dy) * 0.3).toFixed(2),
+                r: (parseFloat(item.r) + parseFloat(dr) * 0.3).toFixed(2),
+                scale,
+              };
+            })
+          );
+          lastUpdateRef.current = currentTime;
+        }
+        animationFrameId.current = requestAnimationFrame(animate);
+      };
+      animationFrameId.current = requestAnimationFrame(animate);
+    }
+    if (!isVertical && !isLargePoem && !reassembled && disperseData.length > 0) {
       startTimeRef.current = performance.now();
       const animate = (currentTime) => {
         const elapsed = currentTime - startTimeRef.current;
@@ -103,7 +160,7 @@ const PoemDisplay = ({ text, onWordClick, emotion }) => {
         cancelAnimationFrame(animationFrameId.current);
       }
     };
-  }, [reassembled, disperseData.length, isLargePoem]);
+  }, [reassembled, disperseData.length, isLargePoem, isVertical]);
 
   // Trigger glitch for large poems
   useEffect(() => {
@@ -147,6 +204,104 @@ const PoemDisplay = ({ text, onWordClick, emotion }) => {
   const currentEmotionIcon = emotionIcons[emotion] || '';
 
   const renderPoem = () => {
+    if (isVertical) {
+      const lines = text.split('\n');
+      const maxLen = Math.max(...lines.map(line => line.length));
+      // Render vertical poem với hiệu ứng động
+      return (
+        <div
+          className={styles['vertical-poem']}
+          style={{ display: 'flex', flexDirection: 'row-reverse', justifyContent: 'center', alignItems: 'flex-start' }}
+          onMouseUp={e => {
+            const selection = window.getSelection();
+            const selected = selection.toString();
+            if (selected) {
+              // Lấy vị trí vùng bôi đen (góc trên phải)
+              let rect = null;
+              try {
+                rect = selection.getRangeAt(0).getBoundingClientRect();
+              } catch (err) {}
+              if (rect) {
+                setTooltipPosition({ x: rect.right, y: rect.top });
+              } else {
+                setTooltipPosition({ x: e.clientX, y: e.clientY });
+              }
+              setSelectedPhrase(selected);
+              setShowTooltip(true);
+            }
+          }}
+        >
+          {/* Tooltip xác nhận cụm từ cho vertical */}
+          {showTooltip && selectedPhrase && (
+            <Popover
+              open={true}
+              content={
+                <div style={{ textAlign: 'center', minWidth: 120 }}>
+                  <span style={{ fontSize: 24, marginRight: 8 }}>{currentEmotionIcon}</span>
+                  <b style={{ whiteSpace: 'pre-wrap' }}>{selectedPhrase}</b>
+                  <div style={{ marginTop: 8 }}>
+                    <Button type="primary" size="small" onClick={handleConfirmSelectedPhrase} style={{ marginRight: 8 }}>OK</Button>
+                    <Button size="small" onClick={handleCancelSelectedPhrase}>Cancel</Button>
+                  </div>
+                </div>
+              }
+              placement="topRight"
+              arrowPointAtCenter
+              overlayStyle={{ position: 'fixed', left: tooltipPosition.x, top: tooltipPosition.y - 8, zIndex: 9999 }}
+            >
+              <span style={{ position: 'fixed', left: tooltipPosition.x, top: tooltipPosition.y, width: 0, height: 0 }} />
+            </Popover>
+          )}
+          {Array.from({ length: lines.length }).map((_, colIdx) => (
+            <div key={colIdx} className={styles['poem-line']} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', margin: '0 0.5em' }}>
+              {Array.from({ length: maxLen }).map((_, rowIdx) => {
+                const item = disperseData.find(d => d.col === colIdx && d.row === rowIdx);
+                if (!item) return <span key={rowIdx} style={{ minHeight: '1.2em' }} />;
+                return (
+                  <span
+                    key={rowIdx}
+                    className={styles.letter}
+                    style={
+                      reassembled
+                        ? {
+                            display: 'block',
+                            minHeight: '1.2em',
+                            cursor: item.char.trim() ? 'pointer' : 'default',
+                            transform: 'translate(0px, 0px) rotate(0deg) scale(1)',
+                            transition: `transform 2s cubic-bezier(0.68, -0.6, 0.2, 1.8) ${item.idx * 0.06}s, opacity 1.2s ease-in-out ${item.idx * 0.06}s, filter 1.2s ease-in-out ${item.idx * 0.06}s`,
+                            opacity: 1,
+                          }
+                        : {
+                            display: 'block',
+                            minHeight: '1.2em',
+                            cursor: item.char.trim() ? 'pointer' : 'default',
+                            transform: `translate(${item.x}px, ${item.y}px) rotate(${item.r}deg) scale(${item.scale})`,
+                            opacity: 0.7,
+                          }
+                    }
+                    onClick={() => {
+                      // Nếu không có selection, xác định từ chứa ký tự này
+                      const chars = lines[colIdx].split('');
+                      let start = rowIdx, end = rowIdx;
+                      while (start > 0 && chars[start - 1].trim() && chars[start - 1] !== ' ') start--;
+                      while (end < chars.length - 1 && chars[end + 1].trim() && chars[end + 1] !== ' ') end++;
+                      const word = chars.slice(start, end + 1).join('').trim();
+                      if (word && !getSelectedText()) {
+                        handleWordClick(word);
+                      }
+                    }}
+                    tabIndex={0}
+                    aria-label={`Char: ${item.char}`}
+                  >
+                    {item.char === ' ' ? '\u00A0' : item.char}
+                  </span>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+      );
+    }
     const lines = [];
     let currentLine = [];
     let currentWord = [];

@@ -143,3 +143,13 @@
     font-size: 12px;
   }
 }
+
+.feature-container {
+  overflow: hidden !important;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+
+.feature-container::-webkit-scrollbar {
+  display: none;
+}
