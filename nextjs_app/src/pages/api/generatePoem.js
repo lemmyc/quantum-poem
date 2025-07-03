@@ -102,16 +102,27 @@ ${CUSTOM_SEPARATOR}
 // CHANGE: Add `topK` parameter for customization
 const fetchReferencePoems = async (query, languageCode, topK) => {
   try {
-    const response = await fetch(SEARCH_API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    let response;
+    try {
+      response = await fetch(SEARCH_API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          query,
+          top_k: topK, // CHANGE: Use the `topK` value passed in
+          language: languageCode,
+        }),
+      });
+    } catch (err) {
+      console.error("Error occurred while calling SEARCH_API_URL:", SEARCH_API_URL);
+      console.error("Request body:", {
         query,
-        top_k: topK, // CHANGE: Use the `topK` value passed in
+        top_k: topK,
         language: languageCode,
-      }),
-    });
-
+      });
+      console.error("Fetch error:", err);
+      throw err; // rethrow to propagate error if needed
+    }
     if (!response.ok) {
       console.warn(
         `Search API request failed with status: ${response.status}. Proceeding without reference poems.`
@@ -249,7 +260,6 @@ ${emotion}`,
       languageCode,
       topKForSearch
     );
-
     const finalUserPrompt = getPoemPromptDetails(
       languageCode,
       mainWord,
